@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="ro">
+<head>
+    <meta charset="UTF-8">
+    <title>Raport Potențial Solar</title>
+
+    <style>
+        body {
+            font-family: 'Helvetica', Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            color: #2c3e50;
+            background: #ffffff;
+        }
+
+        .page {
+            padding: 40px 50px;
+            page-break-after: always;
+        }
+
+        h1, h2, h3 {
+            color: #1a5490;
+            margin-bottom: 10px;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-size: 28px;
+            text-align: center;
+        }
+
+        h2 {
+            font-size: 20px;
+            margin-top: 30px;
+        }
+
+        h3 {
+            font-size: 16px;
+            margin-top: 20px;
+        }
+
+        .subtitle {
+            font-size: 14px;
+            color: #34495e;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .section-text {
+            line-height: 1.5;
+            font-size: 13px;
+            margin-bottom: 15px;
+            text-align: justify;
+        }
+
+        .info-box {
+            background: #ecf4ff;
+            border-left: 4px solid #1a5490;
+            padding: 12px 15px;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 15px 0;
+            font-size: 13px;
+        }
+
+        table th {
+            background: #34495e;
+            color: white;
+            padding: 8px;
+            text-align: left;
+        }
+
+        table td {
+            background: #f8f8f8;
+            border-bottom: 1px solid #dddddd;
+            padding: 8px;
+        }
+
+        .footer {
+            margin-top: 40px;
+            font-size: 11px;
+            text-align: center;
+            color: #7f8c8d;
+        }
+
+        .image {
+            width: 100%;
+            margin: 20px 0;
+        }
+
+        .highlight {
+            color: #27ae60;
+            font-weight: bold;
+        }
+
+        .warning {
+            color: #e74c3c;
+            font-weight: bold;
+        }
+
+        .center {
+            text-align: center;
+        }
+
+    </style>
+</head>
+
+<body>
+
+<!-- ================= COVER PAGE ================= -->
+<div class="page">
+    <h1>RAPORT POTENȚIAL SOLAR</h1>
+
+    <p class="subtitle">
+        <span id="location_name">{{ location_name }}</span><br>
+        Coordonate: {{ lat }}°N, {{ lon }}°E
+    </p>
+
+    <div class="info-box">
+        <b>Data generării:</b> {{ report_date }}<br>
+        <b>Versiune raport:</b> 2.0 Enterprise<br>
+        <b>Certificare:</b> IEC 61853 / EN 50583
+    </div>
+
+    <div class="footer">
+        Acest raport este generat automat pe baza datelor PVGIS, NASA, Copernicus și Sentinel-2.
+        <br>
+        Pentru validare finală consultați un inginer autorizat în energetică.
+    </div>
+</div>
+
+
+<!-- ================= EXECUTIVE SUMMARY ================= -->
+<div class="page">
+
+    <h2>1. Rezumat Executiv</h2>
+
+    <p class="section-text">
+        Evaluarea efectuată indică un potențial solar
+        <span class="highlight">{{ site_grade_text }}</span>
+        cu un scor total de
+        <span class="highlight">{{ site_score }}/10</span>.
+    </p>
+
+    <table>
+        <tr>
+            <th>Indicator</th>
+            <th>Valoare</th>
+        </tr>
+        <tr><td>Producție estimată (P50)</td><td>{{ p50_mwh }} MWh/an</td></tr>
+        <tr><td>Producție garantată (P90)</td><td>{{ p90_mwh }} MWh/an</td></tr>
+        <tr><td>Randament specific</td><td>{{ specific_yield }} kWh/kWp</td></tr>
+        <tr><td>Performance Ratio</td><td>{{ pr }}%</td></tr>
+        <tr><td>Precizie estimare</td><td>{{ accuracy }}</td></tr>
+    </table>
+
+    <div class="info-box">
+        Recomandare: <br>
+        <b>{{ recommendation_text }}</b>
+    </div>
+</div>
+
+
+<!-- ================= SOLAR RESOURCE ================= -->
+<div class="page">
+
+    <h2>2. Resursă Solară</h2>
+
+    <p class="section-text">
+        Resursa solară anuală este: <b>{{ irradiation_kwh_m2 }} kWh/m²/an</b>.
+        <br>
+        Aceasta reprezintă un potențial solar
+        <b class="highlight">{{ irradiation_rating }}</b>
+        pentru Republica Moldova.
+    </p>
+
+    <table>
+        <tr><th>Parametru</th><th>Valoare</th></tr>
+        <tr><td>Zile însorite / an</td><td>{{ sunny_days }}</td></tr>
+        <tr><td>Ore producție</td><td>{{ production_hours }}</td></tr>
+        <tr><td>Peak Sun Hours</td><td>{{ psh }}</td></tr>
+    </table>
+
+    <h3>Grafic Producție Lunară</h3>
+    <img class="image" src="{{ monthly_chart_path }}" alt="Grafic producție lunară">
+
+</div>
+
+
+<!-- ================= TERRAIN / SHADING ================= -->
+<div class="page">
+
+    <h2>3. Analiză Teren & Umbrire</h2>
+
+    <p class="section-text">
+        Umbrirea anuală estimată este de
+        <b>{{ shading_loss }}%</b>.
+        Principalele surse: copaci / clădiri / relief.
+    </p>
+
+    <table>
+        <tr><th>Indicator</th><th>Valoare</th></tr>
+        <tr><td>Pantă medie</td><td>{{ slope_mean }}°</td></tr>
+        <tr><td>Aspect (orientare)</td><td>{{ aspect_mean }}°</td></tr>
+        <tr><td>Umbre totale</td><td>{{ full_shaded_hours }} ore</td></tr>
+    </table>
+
+    <img class="image" src="{{ shading_map_path }}" alt="Hartă umbrire">
+</div>
+
+
+<!-- ================= FINANCIAL ANALYSIS ================= -->
+<div class="page">
+
+    <h2>4. Analiză Financiară</h2>
+
+    <table>
+        <tr><th>Parametru</th><th>Valoare</th></tr>
+        <tr><td>CAPEX Estimat</td><td>{{ capex }} EUR</td></tr>
+        <tr><td>Cost per kWp</td><td>{{ capex_kwp }} EUR/kWp</td></tr>
+        <tr><td>Venit anual (P50)</td><td>{{ revenue_p50 }} EUR</td></tr>
+        <tr><td>Perioadă recuperare investiție</td><td>{{ payback }} ani</td></tr>
+    </table>
+
+    <div class="warning">
+        Atenție: Aceste calcule sunt estimative.
+    </div>
+</div>
+
+
+<!-- ================= METHODS ================= -->
+<div class="page">
+
+    <h2>5. Metodologie & Acuratețe</h2>
+
+    <p class="section-text">
+        Date utilizate: PVGIS-5.2, NASA POWER, Copernicus, Sentinel-2, EU-DEM.
+        <br><br>
+        Modele conform IEC 61853, EN 50583, Monte Carlo (10.000 simulări).
+    </p>
+
+    <table>
+        <tr><th>Sursă date</th><th>Precizie</th></tr>
+        <tr><td>PVGIS TMY</td><td>±4.2%</td></tr>
+        <tr><td>NASA POWER</td><td>±8.0%</td></tr>
+        <tr><td>EU-DEM</td><td>±7 m</td></tr>
+    </table>
+</div>
+
+
+<!-- ================= FINAL ================= -->
+<div class="page">
+
+    <h2>6. Concluzii</h2>
+
+    <p class="section-text">
+        Evaluarea generală indică un potențial
+        <b class="highlight">{{ site_grade_text }}</b>.
+        <br><br>
+        Recomandări:
+    </p>
+
+    <ul>
+        <li>{{ rec1 }}</li>
+        <li>{{ rec2 }}</li>
+        <li>{{ rec3 }}</li>
+        <li>{{ rec4 }}</li>
+    </ul>
+
+    <div class="footer">
+        Solar Analyzer Pro © 2025 — Raport generat automat.
+    </div>
+</div>
+
+</body>
+</html>

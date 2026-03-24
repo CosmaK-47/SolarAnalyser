@@ -1,0 +1,45 @@
+# Core Django
+Django==4.2.7
+djangorestframework==3.14.0
+celery==5.3.4
+redis==5.0.1
+psycopg2-binary==2.9.9
+django-environ==0.11.2
+
+# Geo & Solar
+pvlib==0.10.2
+rasterio==1.3.9
+GDAL==3.7.3
+sentinelhub==3.10.2
+geopy==2.4.1
+pyproj==3.6.1
+shapely==2.0.2
+geopandas==0.14.1
+xarray==2023.11.0
+netCDF4==1.6.5
+
+# Data Processing
+numpy==1.24.3
+pandas==2.1.3
+scipy==1.11.4
+scikit-learn==1.3.2
+
+# Visualization
+matplotlib==3.8.2
+cartopy==0.22.0
+folium==0.15.0
+plotly==5.18.0
+
+# PDF Generation
+reportlab==4.0.7
+weasyprint==60.1
+Pillow==10.1.0
+
+# API Clients
+requests==2.31.0
+aiohttp==3.9.1
+python-dotenv==1.0.0
+
+# Utilities
+tqdm==4.66.1
+python-dateutil==2.8.2
