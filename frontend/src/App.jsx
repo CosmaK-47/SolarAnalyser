@@ -16,58 +16,31 @@ export default function App() {
   const [filters, setFilters] = useState({
     source: "all",
     metric: "all",
-    location: "all",
-    region: "all",
-    deviceId: "all",
-    quality: "all",
-    status: "all",
     fromDate: "",
     toDate: "",
   });
 
-  const merged = [...satelliteData, ...hardwareData];
+  const data = [...satelliteData, ...hardwareData];
 
   const filtered = useMemo(() => {
-    return filterData(merged, filters);
+    return data.filter((d) => {
+      return (
+        (filters.source === "all" || d.source === filters.source) &&
+        (filters.metric === "all" || d.metric === filters.metric)
+      );
+    });
   }, [filters]);
 
-  const satelliteFiltered = filtered.filter((x) => x.source === "satellite");
-  const hardwareFiltered = filtered.filter((x) => x.source === "hardware");
-
-  const stats = rangeStats(filtered.map((x) => x.value));
-
-  const comparison = useMemo(() => {
-    const map = new Map(
-      hardwareFiltered.map(
-        (x) => [`${x.location}-${x.metric}-${dateOnly(x.timestamp)}`, x]
-      )
-    );
-
-    return satelliteFiltered
-      .map((sat) => {
-        const key = `${sat.location}-${sat.metric}-${dateOnly(sat.timestamp)}`;
-        const hw = map.get(key);
-        if (!hw) return null;
-
-        return {
-          id: sat.id + hw.id,
-          location: sat.location,
-          metric: sat.metric,
-          satellite: sat.value,
-          hardware: hw.value,
-          diff: hw.value - sat.value,
-        };
-      })
-      .filter(Boolean);
-  }, [satelliteFiltered, hardwareFiltered]);
-
   return (
-    <div className="p-6 space-y-6 bg-gray-100 min-h-screen">
-      <h1 className="text-2xl font-bold">Solar Dashboard</h1>
+    <div className="p-6 space-y-6">
+      <h1 className="text-2xl font-bold text-cyan-400">
+        Solar Analyzer Dashboard
+      </h1>
 
       <div className="grid grid-cols-4 gap-4">
         <StatCard label="Records" value={filtered.length} />
-        <StatCard label="Avg" value={stats.avg.toFixed(2)} />
+        <StatCard label="Satellite" value={satelliteData.length} />
+        <StatCard label="Hardware" value={hardwareData.length} />
       </div>
 
       <div className="grid grid-cols-4 gap-4">
@@ -75,7 +48,7 @@ export default function App() {
 
         <div className="col-span-3 space-y-4">
           <DistributionChart data={filtered} />
-          <ComparisonList rows={comparison} />
+          <ComparisonList rows={[]} />
           <DataTable data={filtered} />
         </div>
       </div>

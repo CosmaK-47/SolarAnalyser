@@ -1,16 +1,16 @@
 export default function DistributionChart({ data }) {
-  const max = Math.max(1, ...data.map((d) => d.value));
+  const max = Math.max(...data.map((d) => d.value), 1);
 
   return (
-    <div className="bg-white p-4 border rounded">
-      <h2 className="font-semibold mb-2">Distribution</h2>
+    <div className="panel space-y-3">
+      <h2 className="text-lg font-semibold">Distribution</h2>
 
-      {data.slice(0, 5).map((d) => (
+      {data.slice(0, 6).map((d) => (
         <div key={d.id}>
-          <div>{d.metric}</div>
-          <div className="bg-gray-200 h-2">
+          <div className="text-xs text-slate-400">{d.metric}</div>
+          <div className="h-2 bg-slate-800 rounded">
             <div
-              className="bg-blue-500 h-2"
+              className="h-2 bg-cyan-400 rounded"
               style={{ width: `${(d.value / max) * 100}%` }}
             />
           </div>
