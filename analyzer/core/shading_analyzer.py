@@ -3,6 +3,16 @@ Shading Analyzer — SentinelHub REAL DATA
 Enterprise geospatial shading engine
 """
 
+"""
+Modulul de analiză a umbririi utilizează imagini Sentinel-2 L2A pentru 
+identificarea preliminară a obstacolelor din vecinătatea amplasamentului 
+fotovoltaic. Pe baza benzilor spectrale B04 și B08 se calculează indicele 
+NDVI, folosit pentru delimitarea vegetației, iar stratul SCL este utilizat 
+pentru eliminarea zonelor afectate de nori. Ulterior sunt generate măști binare 
+pentru vegetație și clădiri, care sunt procesate morfologic pentru reducerea zgomotului. 
+Proporția suprafeței ocupate de aceste obstacole este transformată într-o estimare orientativă 
+a pierderilor anuale prin umbrire.
+"""
 import numpy as np
 import cv2
 import shapely.geometry as geom
@@ -13,6 +23,7 @@ from sentinelhub import (
     SentinelHubRequest, SentinelHubDownloadClient,
     bbox_to_dimensions,
 )
+
 
 class ShadingAnalyzer:
     """

@@ -1,0 +1,12 @@
+[
+    {
+        "device_id": "solar_node_001",
+        "temperature": 24.5,
+        "humidity": 55.2,
+        "irradiance": 700,
+        "panel_voltage": 5.1,
+        "panel_current": 0.22,
+        "panel_power": 1.12,
+        "received_at": "2026-04-28T16:13:11.575737"
+    }
+]
