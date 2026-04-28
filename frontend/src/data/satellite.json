@@ -1,0 +1,13 @@
+[
+  {
+    "id": "sat-001",
+    "source": "satellite",
+    "timestamp": "2026-04-28T08:00:00Z",
+    "location": "Chisinau",
+    "region": "Moldova",
+    "metric": "irradiance",
+    "value": 712,
+    "unit": "W/m²",
+    "quality": "good"
+  }
+]
