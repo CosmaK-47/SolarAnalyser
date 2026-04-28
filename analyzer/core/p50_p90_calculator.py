@@ -3,6 +3,15 @@ P50 / P90 Energy Yield Calculator (Enterprise Monte-Carlo Engine)
 Autor: Cosmin Usurelu (SolarAnalyzer Pro)
 """
 
+"""
+Acest cod estimează producția energetică a unei instalații fotovoltaice într-un mod realist. 
+În loc să calculeze o singură valoare fixă, el rulează mii de simulări Monte Carlo. În fiecare
+ simulare, modifică ușor factorii care influențează producția, cum ar fi variația radiației solare,
+  eroarea sursei de date, shading-ul, temperatura, murdăria, mismatch-ul și degradarea panourilor.
+   La final, pe baza tuturor rezultatelor, calculează indicatorii P50, P90 și P10. P50 reprezintă 
+   producția cea mai probabilă, P90 reprezintă un scenariu conservator, iar P10 un scenariu optimist.
+"""
+
 import numpy as np
 import pandas as pd
 from dataclasses import dataclass

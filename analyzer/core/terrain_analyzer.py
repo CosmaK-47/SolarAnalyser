@@ -28,6 +28,8 @@ Referințe:
     - Sandia Terrain Suitability Model
 """
 
+
+
 import numpy as np
 from typing import Dict
 
