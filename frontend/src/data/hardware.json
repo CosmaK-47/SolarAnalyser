@@ -1,0 +1,14 @@
+[
+  {
+    "id": "hw-001",
+    "source": "hardware",
+    "timestamp": "2026-04-28T08:02:00Z",
+    "deviceId": "solar_node_001",
+    "location": "Chisinau",
+    "region": "Moldova",
+    "metric": "irradiance",
+    "value": 698,
+    "unit": "W/m²",
+    "status": "ok"
+  }
+]
