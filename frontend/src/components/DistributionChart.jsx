@@ -7,6 +7,13 @@ export default function DistributionChart({ data }) {
     humidity: { bar: "var(--primary)", glow: "rgba(34,211,238,0.4)" },
     uv_index: { bar: "var(--violet)", glow: "rgba(167,139,250,0.4)" },
     wind_speed: { bar: "var(--green)", glow: "rgba(74,222,128,0.4)" },
+    pressure: { bar: "var(--primary)", glow: "rgba(34,211,238,0.4)" },
+    elevation: { bar: "var(--violet)", glow: "rgba(167,139,250,0.4)" },
+    vegetation: { bar: "var(--green)", glow: "rgba(74,222,128,0.4)" },
+    shading: { bar: "var(--amber)", glow: "rgba(251,191,36,0.4)" },
+    panel_voltage: { bar: "var(--primary)", glow: "rgba(34,211,238,0.4)" },
+    panel_current: { bar: "var(--primary)", glow: "rgba(34,211,238,0.4)" },
+    panel_power: { bar: "var(--amber)", glow: "rgba(251,191,36,0.4)" },
   };
 
   const visible = data.slice(0, 7);

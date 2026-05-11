@@ -1,4 +1,4 @@
-export default function StatCard({ label, value, accent = "cyan", icon }) {
+export default function StatCard({ label, value, accent = "cyan" }) {
   const colors = {
     cyan: {
       value: "var(--primary)",

@@ -1,6 +1,6 @@
 import Badge from "./Badge";
 
-export default function DataTable({ data }) {
+export default function DataTable({ data, onSelectRecord, selectedRecordId }) {
   return (
     <div className="panel" style={{ padding: 0 }}>
       {/* Table header bar */}
@@ -51,12 +51,20 @@ export default function DataTable({ data }) {
               <th>Location</th>
               <th>Metric</th>
               <th style={{ textAlign: "right" }}>Value</th>
+              <th style={{ width: 140 }}>Provider</th>
               <th style={{ textAlign: "right", width: 90 }}>Date</th>
             </tr>
           </thead>
           <tbody>
             {data.map((d) => (
-              <tr key={d.id}>
+              <tr
+                key={d.id}
+                onClick={() => onSelectRecord?.(d)}
+                style={{
+                  cursor: onSelectRecord ? "pointer" : "default",
+                  background: selectedRecordId === d.id ? "rgba(34,211,238,0.06)" : undefined,
+                }}
+              >
                 <td>
                   <Badge type={d.source === "satellite" ? "blue" : "green"}>
                     {d.source}
@@ -88,7 +96,10 @@ export default function DataTable({ data }) {
                     fontWeight: 700,
                   }}
                 >
-                  {d.value}
+                  {d.value} {d.unit || ""}
+                </td>
+                <td style={{ color: "var(--muted)", fontSize: 12 }}>
+                  {d.provider || d.deviceId || "local"}
                 </td>
                 <td
                   style={{

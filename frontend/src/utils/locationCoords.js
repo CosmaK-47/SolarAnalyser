@@ -3,6 +3,9 @@
  * Tries to match by substring so "Cairo, Egypt" matches "Cairo".
  */
 export const LOCATION_COORDS = {
+  "Chisinau": [47.0105, 28.8638],
+  "Chișinău": [47.0105, 28.8638],
+  "Moldova": [47.4116, 28.3699],
   "Cairo": [30.0444, 31.2357],
   "Egypt": [26.8206, 30.8025],
   "Riyadh": [24.7136, 46.6753],
@@ -187,7 +190,7 @@ export function getCoords(location) {
  * Enrich a data record with lat/lng if possible
  */
 export function enrichWithCoords(record) {
-  if (record.lat && record.lng) return record;
+  if (record.lat != null && record.lng != null) return record;
   const coords = getCoords(record.location);
   if (!coords) return record;
   return { ...record, lat: coords[0], lng: coords[1] };
