@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+import { buildPointGroups } from "../utils/pointRecords";
+
 const METRIC_COLORS = {
   irradiance: { color: "#fbbf24", label: "Irradiance", unit: "W/m²" },
   temperature: { color: "#f87171", label: "Temperature", unit: "°C" },
@@ -8,6 +10,12 @@ const METRIC_COLORS = {
   wind_speed: { color: "#4ade80", label: "Wind Speed", unit: "m/s" },
   pressure: { color: "#38bdf8", label: "Pressure", unit: "hPa" },
   precipitation: { color: "#818cf8", label: "Precipitation", unit: "mm" },
+  elevation: { color: "#a78bfa", label: "Elevation", unit: "m" },
+  vegetation: { color: "#4ade80", label: "Vegetation", unit: "%" },
+  shading: { color: "#fbbf24", label: "Shading", unit: "%" },
+  panel_voltage: { color: "#38bdf8", label: "Panel Voltage", unit: "V" },
+  panel_current: { color: "#22d3ee", label: "Panel Current", unit: "A" },
+  panel_power: { color: "#fbbf24", label: "Panel Power", unit: "W" },
 };
 
 export default function MapView({ data, onAddData }) {
@@ -20,7 +28,7 @@ export default function MapView({ data, onAddData }) {
 
   // ── Load Leaflet ────────────────────────────────────────────────────────────
   useEffect(() => {
-    if (window.L) { setReady(true); return; }
+    if (ready || window.L) return;
 
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -31,7 +39,7 @@ export default function MapView({ data, onAddData }) {
     script.src = "https://unpkg.com/leaflet@1.9.4/dist/leaflet.js";
     script.onload = () => setReady(true);
     document.head.appendChild(script);
-  }, []);
+  }, [ready]);
 
   // ── Init map ────────────────────────────────────────────────────────────────
   useEffect(() => {
@@ -66,14 +74,9 @@ export default function MapView({ data, onAddData }) {
         tempMarkerRef.current = null;
       }
 
-      const marker = L.circleMarker([e.latlng.lat, e.latlng.lng], {
-        radius: 8,
-        fillColor: "#f87171",
-        color: "#0c1526",
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.7,
-        className: "temp-marker",
+      const marker = L.marker([e.latlng.lat, e.latlng.lng], {
+        icon: createPointIcon(L, "#f87171", "rgba(248,113,113,0.35)"),
+        keyboard: false,
       }).addTo(map);
 
       tempMarkerRef.current = marker;
@@ -90,17 +93,11 @@ export default function MapView({ data, onAddData }) {
     const group = layerGroupRef.current;
     group.clearLayers();
 
-    // Group by location (only those with lat/lng)
-    const byLocation = {};
-    data.forEach((d) => {
-      if (d.lat == null || d.lng == null) return;
-      if (!byLocation[d.location]) {
-        byLocation[d.location] = { lat: d.lat, lng: d.lng, records: [] };
-      }
-      byLocation[d.location].records.push(d);
-    });
+    const pointGroups = buildPointGroups(data);
 
-    Object.entries(byLocation).forEach(([location, { lat, lng, records }]) => {
+    pointGroups.forEach((point) => {
+      const { lat, lng, records } = point;
+      const location = point.name;
       const hasSat = records.some((r) => r.source === "satellite");
       const hasHW = records.some((r) => r.source === "hardware");
 
@@ -113,23 +110,9 @@ export default function MapView({ data, onAddData }) {
         fillColor = "#4ade80"; glowColor = "rgba(74,222,128,0.35)";
       }
 
-      // Pulse ring
-      L.circleMarker([lat, lng], {
-        radius: 15,
-        fillColor: glowColor,
-        color: "transparent",
-        fillOpacity: 0.5,
-        interactive: false,
-      }).addTo(group);
-
-      // Core marker
-      const marker = L.circleMarker([lat, lng], {
-        radius: 7,
-        fillColor,
-        color: "#0c1526",
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.95,
+      const marker = L.marker([lat, lng], {
+        icon: createPointIcon(L, fillColor, glowColor),
+        keyboard: false,
       });
 
       marker.on("click", (e) => {
@@ -139,7 +122,7 @@ export default function MapView({ data, onAddData }) {
           tempMarkerRef.current.remove();
           tempMarkerRef.current = null;
         }
-        setPanel({ type: "location", location, lat, lng, records });
+        setPanel({ type: "location", location, lat, lng, records, point });
       });
 
       marker.addTo(group);
@@ -299,7 +282,7 @@ export default function MapView({ data, onAddData }) {
             pointerEvents: "none",
           }}
         >
-          Click a marker to view data · Click the map to add a measurement
+          Click a marker to view data · Click the map to add data at that point
         </div>
       )}
 
@@ -335,7 +318,7 @@ export default function MapView({ data, onAddData }) {
 
 /* ─── Location Panel ─────────────────────────────────────────────────── */
 function LocationPanel({ panel, onClose, onAddData }) {
-  const { location, lat, lng, records } = panel;
+  const { location, lat, lng, records, point } = panel;
 
   const satRecords = records.filter((r) => r.source === "satellite");
   const hwRecords = records.filter((r) => r.source === "hardware");
@@ -363,12 +346,12 @@ function LocationPanel({ panel, onClose, onAddData }) {
       <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
         {satRecords.length > 0 && (
           <span style={{ ...tagStyle, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.25)", color: "var(--primary)" }}>
-            🛰 {satRecords.length} satellite
+            {satRecords.length} satellite
           </span>
         )}
         {hasHW ? (
           <span style={{ ...tagStyle, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", color: "var(--green)" }}>
-            🔧 {hwRecords.length} hardware
+            {hwRecords.length} hardware
           </span>
         ) : (
           <span style={{ ...tagStyle, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", color: "var(--red)" }}>
@@ -400,23 +383,29 @@ function LocationPanel({ panel, onClose, onAddData }) {
         <ComparisonMini sat={satRecords} hw={hwRecords} />
       )}
 
-      {/* CTA to add hardware data */}
+      {/* CTA to add data */}
       <div
         style={{
           marginTop: 16,
           padding: "14px",
           borderRadius: 12,
-          background: hasHW ? "rgba(34,211,238,0.05)" : "rgba(74,222,128,0.06)",
-          border: `1px solid ${hasHW ? "rgba(34,211,238,0.15)" : "rgba(74,222,128,0.2)"}`,
+          background: "rgba(34,211,238,0.05)",
+          border: "1px solid rgba(34,211,238,0.15)",
         }}
       >
         <div style={{ fontSize: 12, color: "var(--muted-2)", marginBottom: 10 }}>
-          {hasHW
-            ? "Add more measurements for this location"
-            : "No hardware measurements yet. Add ground-truth data:"}
+          Add satellite data, a hardware reading, or both for this coordinate.
         </div>
         <button
-          onClick={() => onAddData({ location, lat, lng, source: "hardware" })}
+          onClick={() => onAddData({
+            location,
+            lat,
+            lng,
+            pointId: point?.pointId,
+            source: "both",
+            hardwareMode: hasHW ? undefined : "demo",
+            coordinateSource: hasHW ? "stored" : "map",
+          })}
           style={{
             width: "100%",
             padding: "9px 0",
@@ -424,12 +413,12 @@ function LocationPanel({ panel, onClose, onAddData }) {
             fontSize: 13,
             fontWeight: 600,
             cursor: "pointer",
-            background: hasHW ? "rgba(34,211,238,0.12)" : "rgba(74,222,128,0.12)",
-            border: `1px solid ${hasHW ? "rgba(34,211,238,0.3)" : "rgba(74,222,128,0.3)"}`,
-            color: hasHW ? "var(--primary)" : "var(--green)",
+            background: "rgba(34,211,238,0.12)",
+            border: "1px solid rgba(34,211,238,0.3)",
+            color: "var(--primary)",
           }}
         >
-          {hasHW ? "+ Add Measurement" : "🔧 Add Hardware Data"}
+          Add Data At This Point
         </button>
       </div>
     </div>
@@ -471,29 +460,11 @@ function NewPointPanel({ panel, onClose, onAddData }) {
       </div>
 
       <div style={{ fontSize: 13, color: "var(--muted-2)", marginBottom: 16, lineHeight: 1.6 }}>
-        No existing measurements at this location. Add a new hardware or satellite record here.
+        No existing measurements at this location. Add satellite data and demo hardware for this coordinate.
       </div>
 
       <button
-        onClick={() => onAddData({ lat, lng, source: "hardware" })}
-        style={{
-          width: "100%",
-          padding: "11px 0",
-          borderRadius: 12,
-          fontSize: 13,
-          fontWeight: 600,
-          cursor: "pointer",
-          background: "linear-gradient(135deg, rgba(74,222,128,0.15), rgba(74,222,128,0.08))",
-          border: "1px solid rgba(74,222,128,0.3)",
-          color: "var(--green)",
-          marginBottom: 8,
-          boxShadow: "0 0 16px rgba(74,222,128,0.08)",
-        }}
-      >
-        🔧 Add Hardware Data Here
-      </button>
-      <button
-        onClick={() => onAddData({ lat, lng, source: "satellite" })}
+        onClick={() => onAddData({ lat, lng, source: "both", hardwareMode: "demo", coordinateSource: "map" })}
         style={{
           width: "100%",
           padding: "11px 0",
@@ -507,7 +478,7 @@ function NewPointPanel({ panel, onClose, onAddData }) {
           boxShadow: "0 0 16px rgba(34,211,238,0.08)",
         }}
       >
-        🛰 Add Satellite Data Here
+        Add Demo Data At This Point
       </button>
     </div>
   );
@@ -527,26 +498,29 @@ function SourceSection({ title, color, records }) {
             <div
               key={r.id}
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
                 padding: "8px 10px",
                 borderRadius: 8,
                 background: "rgba(148,163,184,0.05)",
                 border: "1px solid var(--border)",
               }}
             >
-              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.color, display: "inline-block", flexShrink: 0, boxShadow: `0 0 5px ${m.color}` }} />
-                <span style={{ fontSize: 12, color: "var(--muted-2)" }}>{m.label}</span>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ width: 6, height: 6, borderRadius: "50%", background: m.color, display: "inline-block", flexShrink: 0, boxShadow: `0 0 5px ${m.color}` }} />
+                  <span style={{ fontSize: 12, color: "var(--muted-2)" }}>{r.label || m.label}</span>
+                </div>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
+                  <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: m.color }}>
+                    {r.value}
+                  </span>
+                  <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "'Space Mono', monospace" }}>
+                    {r.unit || m.unit}
+                  </span>
+                </div>
               </div>
-              <div style={{ display: "flex", alignItems: "baseline", gap: 3 }}>
-                <span style={{ fontSize: 14, fontWeight: 700, fontFamily: "'Space Mono', monospace", color: m.color }}>
-                  {r.value}
-                </span>
-                <span style={{ fontSize: 10, color: "var(--muted)", fontFamily: "'Space Mono', monospace" }}>
-                  {m.unit}
-                </span>
+              <div style={{ marginTop: 5, display: "flex", justifyContent: "space-between", gap: 8, fontSize: 10, color: "var(--muted)", fontFamily: "'Space Mono', monospace" }}>
+                <span>{r.provider || r.deviceId || r.quality || "local"}</span>
+                <span>{(r.date || r.timestamp || "").slice(0, 10)}</span>
               </div>
             </div>
           );
@@ -613,6 +587,18 @@ function LegendDot({ color, label }) {
       <span>{label}</span>
     </span>
   );
+}
+
+function createPointIcon(L, fillColor, glowColor) {
+  return L.divIcon({
+    className: "solar-map-marker",
+    html: `
+      <span class="solar-map-marker__ring" style="background:${glowColor};"></span>
+      <span class="solar-map-marker__dot" style="background:${fillColor};"></span>
+    `,
+    iconSize: [34, 34],
+    iconAnchor: [17, 17],
+  });
 }
 
 /* ─── Shared styles ──────────────────────────────────────────────────── */

@@ -1,14 +1,20 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
+
+import { readBrowserPosition } from "../utils/geolocation";
+import { buildPointId } from "../utils/pointRecords";
 
 const METRICS = [
   { value: "irradiance", label: "Irradiance", unit: "W/m²", color: "amber" },
   { value: "temperature", label: "Temperature", unit: "°C", color: "red" },
-  { value: "humidity", label: "Humidity", unit: "%", color: "cyan" },
-  { value: "uv_index", label: "UV Index", unit: "UVI", color: "violet" },
   { value: "wind_speed", label: "Wind Speed", unit: "m/s", color: "green" },
+  { value: "humidity", label: "Humidity", unit: "%", color: "cyan" },
   { value: "pressure", label: "Pressure", unit: "hPa", color: "blue" },
-  { value: "precipitation", label: "Precipitation", unit: "mm", color: "blue" },
+  { value: "elevation", label: "Elevation", unit: "m", color: "violet" },
+  { value: "vegetation", label: "Vegetation", unit: "%", color: "green" },
+  { value: "shading", label: "Shading", unit: "%", color: "amber" },
 ];
+
+const ALL_METRIC_VALUES = METRICS.map((metric) => metric.value);
 
 const colorMap = {
   amber: { bg: "rgba(251,191,36,0.1)", border: "rgba(251,191,36,0.3)", text: "var(--amber)" },
@@ -19,22 +25,25 @@ const colorMap = {
   blue: { bg: "rgba(56,189,248,0.1)", border: "rgba(56,189,248,0.3)", text: "var(--primary)" },
 };
 
-export default function AddDataModal({ prefill, onAdd, onClose }) {
+export default function AddDataModal({ prefill, hardwareSampleAvailable = false, onAdd, onClose }) {
+  const hasPrefilledCoordinates = prefill?.lat != null && prefill?.lng != null;
+  const initialSource = prefill?.source || (hasPrefilledCoordinates ? "both" : "satellite");
   const [form, setForm] = useState({
-    source: prefill?.source || "hardware",
+    source: initialSource,
     location: prefill?.location || "",
-    lat: prefill?.lat != null ? prefill.lat.toFixed(5) : "",
-    lng: prefill?.lng != null ? prefill.lng.toFixed(5) : "",
-    metric: prefill?.metric || "",
-    value: "",
-    date: new Date().toISOString().slice(0, 10),
-    notes: "",
+    lat: prefill?.lat != null ? Number(prefill.lat).toFixed(5) : "",
+    lng: prefill?.lng != null ? Number(prefill.lng).toFixed(5) : "",
+    metrics: [prefill?.metric || "irradiance"],
+    hardwareMode: prefill?.hardwareMode || (hardwareSampleAvailable ? "latest" : "demo"),
+    coordinateSource: prefill?.coordinateSource || (hasPrefilledCoordinates ? "map" : "manual"),
+    pointId: prefill?.pointId || prefill?.point_id || "",
   });
-
   const [errors, setErrors] = useState({});
-  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [result, setResult] = useState(null);
+  const [submitError, setSubmitError] = useState("");
+  const [readingGps, setReadingGps] = useState(false);
 
-  // Close on Escape
   useEffect(() => {
     const handler = (e) => { if (e.key === "Escape") onClose(); };
     document.addEventListener("keydown", handler);
@@ -42,44 +51,111 @@ export default function AddDataModal({ prefill, onAdd, onClose }) {
   }, [onClose]);
 
   function set(key, val) {
-    setForm((f) => ({ ...f, [key]: val }));
-    setErrors((e) => ({ ...e, [key]: undefined }));
+    setForm((current) => ({ ...current, [key]: val }));
+    setErrors((current) => ({ ...current, [key]: undefined }));
+    setSubmitError("");
   }
 
   function validate() {
     const errs = {};
-    if (!form.location.trim()) errs.location = "Required";
-    if (!form.metric) errs.metric = "Select a metric";
-    if (form.value === "" || isNaN(parseFloat(form.value))) errs.value = "Enter a valid number";
-    if (!form.date) errs.date = "Required";
+    const lat = Number(form.lat);
+    const lng = Number(form.lng);
+
+    if ((form.source === "satellite" || form.source === "both") && form.metrics.length === 0) errs.metrics = "Select at least one";
+    if (form.lat === "" || Number.isNaN(lat) || lat < -90 || lat > 90) errs.lat = "Invalid latitude";
+    if (form.lng === "" || Number.isNaN(lng) || lng < -180 || lng > 180) errs.lng = "Invalid longitude";
+
     return errs;
   }
 
-  function handleSubmit() {
+  async function handleSubmit() {
     const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
+    if (Object.keys(errs).length) {
+      setErrors(errs);
+      return;
+    }
 
-    onAdd({
-      source: form.source,
-      location: form.location.trim(),
-      lat: form.lat !== "" ? parseFloat(form.lat) : undefined,
-      lng: form.lng !== "" ? parseFloat(form.lng) : undefined,
-      metric: form.metric,
-      value: parseFloat(form.value),
-      date: form.date,
-      notes: form.notes.trim() || undefined,
-    });
+    setSubmitting(true);
+    setSubmitError("");
 
-    setSubmitted(true);
-    setTimeout(() => {
-      onClose();
-    }, 900);
+    try {
+      const response = await onAdd({
+        source: form.source,
+        location: form.location.trim() || `Point ${Number(form.lat).toFixed(5)}, ${Number(form.lng).toFixed(5)}`,
+        lat: Number(form.lat),
+        lng: Number(form.lng),
+        pointId: form.pointId || buildPointId(form.lat, form.lng),
+        metrics: form.source === "satellite" || form.source === "both" ? form.metrics : undefined,
+        mode: effectiveHardwareMode,
+      });
+      setResult(response?.records ? { records: response.records } : response?.measurement || true);
+      setTimeout(onClose, 1100);
+    } catch (error) {
+      setSubmitError(error.message || "Request failed");
+    } finally {
+      setSubmitting(false);
+    }
   }
 
-  const selectedMetric = METRICS.find((m) => m.value === form.metric);
+  async function readCurrentGps() {
+    setReadingGps(true);
+    setSubmitError("");
+
+    try {
+      const position = await readBrowserPosition();
+      setForm((current) => ({
+        ...current,
+        lat: position.coords.latitude.toFixed(5),
+        lng: position.coords.longitude.toFixed(5),
+        location: current.location.trim() ? current.location : "Current GPS",
+        coordinateSource: "gps",
+        source: hardwareSampleAvailable && current.source === "satellite" ? "both" : current.source,
+        hardwareMode: hardwareSampleAvailable ? "latest" : current.hardwareMode,
+        pointId: buildPointId(position.coords.latitude, position.coords.longitude),
+      }));
+      setErrors((current) => ({ ...current, lat: undefined, lng: undefined }));
+    } catch (error) {
+      setSubmitError(error.message || "Could not read GPS coordinates.");
+    } finally {
+      setReadingGps(false);
+    }
+  }
+
+  function toggleMetric(value) {
+    setForm((current) => {
+      const active = current.metrics.includes(value);
+      return {
+        ...current,
+        metrics: active
+          ? current.metrics.filter((metric) => metric !== value)
+          : [...current.metrics, value],
+      };
+    });
+    setErrors((current) => ({ ...current, metrics: undefined }));
+    setSubmitError("");
+  }
+
+  function selectAllMetrics() {
+    set("metrics", ALL_METRIC_VALUES);
+  }
+
+  function clearMetrics() {
+    set("metrics", []);
+  }
+
+  const selectedMetrics = METRICS.filter((metric) => form.metrics.includes(metric.value));
+  const allMetricsSelected = selectedMetrics.length === METRICS.length;
+  const usesHardware = form.source === "hardware" || form.source === "both";
+  const usesSatellite = form.source === "satellite" || form.source === "both";
+  const effectiveHardwareMode = hardwareSampleAvailable ? form.hardwareMode : "demo";
+  const coordinateLabel = useMemo(() => {
+    if (form.coordinateSource === "gps") return "Current GPS";
+    if (form.coordinateSource === "map") return "Map point";
+    if (form.coordinateSource === "stored") return "Stored point";
+    return "Manual coordinate";
+  }, [form.coordinateSource]);
 
   return (
-    /* Backdrop */
     <div
       onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
       style={{
@@ -94,20 +170,18 @@ export default function AddDataModal({ prefill, onAdd, onClose }) {
         padding: 20,
       }}
     >
-      {/* Modal */}
       <div
         style={{
           width: "100%",
-          maxWidth: 540,
+          maxWidth: 640,
           background: "linear-gradient(135deg, #0c1526 0%, #0a1220 100%)",
           border: "1px solid rgba(34,211,238,0.2)",
-          borderRadius: 20,
+          borderRadius: 16,
           overflow: "hidden",
           boxShadow: "0 0 60px rgba(34,211,238,0.1), 0 40px 80px rgba(0,0,0,0.6)",
           animation: "modalIn 0.2s ease",
         }}
       >
-        {/* Header */}
         <div
           style={{
             padding: "20px 24px",
@@ -120,238 +194,205 @@ export default function AddDataModal({ prefill, onAdd, onClose }) {
         >
           <div>
             <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", letterSpacing: "0.1em", color: "var(--primary)", marginBottom: 3 }}>
-              NEW RECORD
+              DATA INGEST
             </div>
             <div style={{ fontWeight: 700, fontSize: 18, color: "#fff" }}>
-              Add Measurement
+              Add Data
             </div>
           </div>
-          <button
-            onClick={onClose}
-            style={{
-              background: "rgba(148,163,184,0.08)",
-              border: "1px solid var(--border)",
-              borderRadius: 10,
-              padding: "6px 10px",
-              color: "var(--muted)",
-              cursor: "pointer",
-              fontSize: 16,
-              lineHeight: 1,
-            }}
-          >
-            ✕
-          </button>
+          <button onClick={onClose} style={closeButtonStyle}>✕</button>
         </div>
 
-        <div style={{ padding: "24px" }}>
-          {submitted ? (
-            <div
-              style={{
-                textAlign: "center",
-                padding: "40px 0",
-                color: "var(--green)",
-              }}
-            >
-              <div style={{ fontSize: 40, marginBottom: 12 }}>✓</div>
-              <div style={{ fontWeight: 600, fontSize: 16 }}>Record added!</div>
-            </div>
+        <div style={{ padding: 24 }}>
+          {result ? (
+            <SuccessState record={result} />
           ) : (
-            <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-
-              {/* Source toggle */}
+            <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <Label>Source</Label>
-                <div style={{ display: "flex", gap: 8, marginTop: 6 }}>
-                  {["satellite", "hardware"].map((s) => (
-                    <button
-                      key={s}
-                      onClick={() => set("source", s)}
-                      style={{
-                        flex: 1,
-                        padding: "8px 0",
-                        borderRadius: 10,
-                        fontSize: 13,
-                        fontWeight: 500,
-                        cursor: "pointer",
-                        border: form.source === s
-                          ? `1px solid ${s === "satellite" ? "var(--primary-border)" : "var(--green-border)"}`
-                          : "1px solid var(--border)",
-                        background: form.source === s
-                          ? s === "satellite" ? "var(--primary-dim)" : "var(--green-dim)"
-                          : "rgba(10,18,32,0.5)",
-                        color: form.source === s
-                          ? s === "satellite" ? "var(--primary)" : "var(--green)"
-                          : "var(--muted)",
-                        transition: "all 0.15s",
-                      }}
-                    >
-                      {s === "satellite" ? "🛰 Satellite" : "🔧 Hardware"}
-                    </button>
-                  ))}
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 6 }}>
+                  <SourceButton active={form.source === "satellite"} onClick={() => set("source", "satellite")} tone="satellite">
+                    Satellite
+                  </SourceButton>
+                  <SourceButton active={form.source === "hardware"} onClick={() => set("source", "hardware")} tone="hardware">
+                    Hardware
+                  </SourceButton>
+                  <SourceButton active={form.source === "both"} onClick={() => set("source", "both")} tone="both">
+                    Both
+                  </SourceButton>
                 </div>
               </div>
 
-              {/* Location */}
               <div>
-                <Label error={errors.location}>Location {errors.location && <Err>{errors.location}</Err>}</Label>
+                <Label>Point name <span style={{ color: "var(--muted)", fontSize: 11 }}>(optional)</span></Label>
                 <input
                   type="text"
                   value={form.location}
                   onChange={(e) => set("location", e.target.value)}
-                  placeholder="e.g. Cairo, Egypt"
-                  style={inputStyle(!!errors.location)}
+                  placeholder={coordinateLabel === "Map point" ? "Map point" : "e.g. roof test point"}
+                  style={{ ...inputStyle(false), marginTop: 6 }}
                 />
               </div>
 
-              {/* Coordinates */}
               <div>
-                <Label>Coordinates <span style={{ color: "var(--muted)", fontSize: 11 }}>(optional — auto-filled from map click)</span></Label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
+                <Label error={errors.lat || errors.lng}>
+                  Coordinates
+                  {(errors.lat || errors.lng) && <Err>{errors.lat || errors.lng}</Err>}
+                </Label>
+                <div style={{
+                  marginTop: 6,
+                  marginBottom: 8,
+                  padding: "9px 11px",
+                  borderRadius: 10,
+                  background: form.coordinateSource === "map" ? "rgba(248,113,113,0.06)" : "rgba(34,211,238,0.05)",
+                  border: form.coordinateSource === "map" ? "1px solid rgba(248,113,113,0.18)" : "1px solid rgba(34,211,238,0.14)",
+                  color: "var(--muted-2)",
+                  fontSize: 12,
+                  display: "flex",
+                  justifyContent: "space-between",
+                  gap: 10,
+                  alignItems: "center",
+                }}>
+                  <span>
+                    {coordinateLabel}
+                    {form.coordinateSource === "map" && " selected from the map"}
+                  </span>
+                  {!hasPrefilledCoordinates && (
+                    <button
+                      onClick={readCurrentGps}
+                      disabled={readingGps}
+                      style={{
+                        padding: "5px 10px",
+                        whiteSpace: "nowrap",
+                        opacity: readingGps ? 0.65 : 1,
+                        cursor: readingGps ? "wait" : "pointer",
+                      }}
+                    >
+                      {readingGps ? "Reading..." : "Use GPS"}
+                    </button>
+                  )}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
                   <input
                     type="number"
                     value={form.lat}
-                    onChange={(e) => set("lat", e.target.value)}
+                    onChange={(e) => {
+                      set("lat", e.target.value);
+                      if (!hasPrefilledCoordinates) set("coordinateSource", "manual");
+                      set("pointId", "");
+                    }}
                     placeholder="Latitude"
                     step="0.00001"
+                    style={inputStyle(!!errors.lat)}
                   />
                   <input
                     type="number"
                     value={form.lng}
-                    onChange={(e) => set("lng", e.target.value)}
+                    onChange={(e) => {
+                      set("lng", e.target.value);
+                      if (!hasPrefilledCoordinates) set("coordinateSource", "manual");
+                      set("pointId", "");
+                    }}
                     placeholder="Longitude"
                     step="0.00001"
+                    style={inputStyle(!!errors.lng)}
                   />
                 </div>
-                {form.lat && form.lng && (
-                  <div style={{ fontSize: 11, color: "var(--muted)", marginTop: 4, fontFamily: "'Space Mono', monospace" }}>
-                    📍 {parseFloat(form.lat).toFixed(4)}, {parseFloat(form.lng).toFixed(4)}
+              </div>
+
+              {usesSatellite && (
+                <>
+                  <div>
+                    <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
+                      <Label error={errors.metrics}>Satellite Data Types {errors.metrics && <Err>{errors.metrics}</Err>}</Label>
+                      <div style={{ display: "flex", gap: 6 }}>
+                        <button
+                          onClick={selectAllMetrics}
+                          disabled={allMetricsSelected}
+                          style={smallActionButtonStyle(allMetricsSelected)}
+                        >
+                          Select all
+                        </button>
+                        <button
+                          onClick={clearMetrics}
+                          disabled={selectedMetrics.length === 0}
+                          style={smallActionButtonStyle(selectedMetrics.length === 0)}
+                        >
+                          Clear
+                        </button>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 6 }}>
+                      {METRICS.map(({ value, label, color }) => {
+                        const c = colorMap[color];
+                        const active = form.metrics.includes(value);
+                        return (
+                          <button
+                            key={value}
+                            onClick={() => toggleMetric(value)}
+                            style={{
+                              padding: "6px 11px",
+                              borderRadius: 8,
+                              fontSize: 12,
+                              fontWeight: 600,
+                              cursor: "pointer",
+                              border: active ? `1px solid ${c.border}` : "1px solid var(--border)",
+                              background: active ? c.bg : "rgba(10,18,32,0.5)",
+                              color: active ? c.text : "var(--muted-2)",
+                              boxShadow: active ? `0 0 12px ${c.bg}` : "none",
+                            }}
+                          >
+                            {label}
+                          </button>
+                        );
+                      })}
+                    </div>
+                    {selectedMetrics.length > 0 && (
+                      <div style={{ fontSize: 12, color: "var(--muted)", marginTop: 8 }}>
+                        The backend will fetch and store {selectedMetrics.length} satellite record{selectedMetrics.length > 1 ? "s" : ""} for this coordinate.
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              {/* Metric */}
-              <div>
-                <Label error={errors.metric}>Metric {errors.metric && <Err>{errors.metric}</Err>}</Label>
-                <div style={{ display: "flex", flexWrap: "wrap", gap: 7, marginTop: 6 }}>
-                  {METRICS.map(({ value, label, color }) => {
-                    const c = colorMap[color];
-                    const active = form.metric === value;
-                    return (
-                      <span
-                        key={value}
-                        onClick={() => set("metric", value)}
-                        style={{
-                          padding: "5px 12px",
-                          borderRadius: 99,
-                          fontSize: 12,
-                          fontWeight: 500,
-                          cursor: "pointer",
-                          border: active ? `1px solid ${c.border}` : "1px solid var(--border)",
-                          background: active ? c.bg : "rgba(10,18,32,0.5)",
-                          color: active ? c.text : "var(--muted-2)",
-                          transition: "all 0.15s",
-                          userSelect: "none",
-                        }}
-                      >
-                        {label}
-                      </span>
-                    );
-                  })}
-                </div>
-              </div>
+                </>
+              )}
 
-              {/* Value */}
-              <div>
-                <Label error={errors.value}>
-                  Value {selectedMetric && (
-                    <span style={{ color: "var(--muted)", fontSize: 11 }}>in {selectedMetric.unit}</span>
-                  )}
-                  {errors.value && <Err>{errors.value}</Err>}
-                </Label>
-                <div style={{ position: "relative", marginTop: 6 }}>
-                  <input
-                    type="number"
-                    value={form.value}
-                    onChange={(e) => set("value", e.target.value)}
-                    placeholder="0.00"
-                    step="0.01"
-                    style={{ ...inputStyle(!!errors.value), paddingRight: selectedMetric ? 52 : 12 }}
-                  />
-                  {selectedMetric && (
-                    <span style={{
-                      position: "absolute",
-                      right: 12,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      fontSize: 11,
-                      fontFamily: "'Space Mono', monospace",
-                      color: "var(--muted)",
-                      pointerEvents: "none",
-                    }}>
-                      {selectedMetric.unit}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Date */}
-              <div>
-                <Label error={errors.date}>Date {errors.date && <Err>{errors.date}</Err>}</Label>
-                <input
-                  type="date"
-                  value={form.date}
-                  onChange={(e) => set("date", e.target.value)}
-                  style={{ ...inputStyle(!!errors.date), marginTop: 6 }}
+              {usesHardware && (
+                <HardwareCaptureState
+                  activeMode={effectiveHardwareMode}
+                  set={set}
+                  hardwareSampleAvailable={hardwareSampleAvailable}
                 />
-              </div>
+              )}
 
-              {/* Notes */}
-              <div>
-                <Label>Notes <span style={{ color: "var(--muted)", fontSize: 11 }}>(optional)</span></Label>
-                <textarea
-                  value={form.notes}
-                  onChange={(e) => set("notes", e.target.value)}
-                  placeholder="Any additional observations..."
-                  rows={2}
-                  style={{
-                    ...inputStyle(false),
-                    marginTop: 6,
-                    resize: "vertical",
-                    minHeight: 60,
-                    fontFamily: "'DM Sans', system-ui, sans-serif",
-                  }}
-                />
-              </div>
+              {submitError && (
+                <div style={errorPanelStyle}>
+                  {submitError}
+                </div>
+              )}
 
-              {/* Actions */}
               <div style={{ display: "flex", gap: 8, marginTop: 4 }}>
-                <button
-                  onClick={onClose}
-                  style={{
-                    flex: 1,
-                    padding: "10px 0",
-                    background: "rgba(148,163,184,0.08)",
-                    border: "1px solid var(--border)",
-                    color: "var(--muted)",
-                    cursor: "pointer",
-                  }}
-                >
+                <button onClick={onClose} style={secondaryButtonStyle}>
                   Cancel
                 </button>
                 <button
                   onClick={handleSubmit}
+                  disabled={submitting}
                   style={{
                     flex: 2,
                     padding: "10px 0",
-                    background: "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(34,211,238,0.1))",
-                    border: "1px solid var(--primary-border)",
-                    color: "var(--primary)",
-                    fontWeight: 600,
-                    cursor: "pointer",
-                    boxShadow: "0 0 20px rgba(34,211,238,0.1)",
+                    opacity: submitting ? 0.65 : 1,
+                    background: usesHardware && !usesSatellite
+                      ? "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.1))"
+                      : "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(34,211,238,0.1))",
+                    border: usesHardware && !usesSatellite ? "1px solid var(--green-border)" : "1px solid var(--primary-border)",
+                    color: usesHardware && !usesSatellite ? "var(--green)" : "var(--primary)",
+                    fontWeight: 700,
+                    cursor: submitting ? "wait" : "pointer",
+                    boxShadow: usesHardware && !usesSatellite ? "0 0 20px rgba(74,222,128,0.1)" : "0 0 20px rgba(34,211,238,0.1)",
                   }}
                 >
-                  Add Record
+                  {submitting ? "Saving..." : submitLabel(form.source)}
                 </button>
               </div>
             </div>
@@ -365,6 +406,122 @@ export default function AddDataModal({ prefill, onAdd, onClose }) {
           to { opacity: 1; transform: scale(1) translateY(0); }
         }
       `}</style>
+    </div>
+  );
+}
+
+function SourceButton({ active, onClick, tone, children }) {
+  const isHardware = tone === "hardware";
+  const isBoth = tone === "both";
+  const color = isHardware ? "var(--green)" : isBoth ? "var(--amber)" : "var(--primary)";
+  const border = isHardware ? "var(--green-border)" : isBoth ? "var(--amber-border)" : "var(--primary-border)";
+  const bg = isHardware ? "var(--green-dim)" : isBoth ? "var(--amber-dim)" : "var(--primary-dim)";
+
+  return (
+    <button
+      onClick={onClick}
+      style={{
+        padding: "9px 0",
+        borderRadius: 10,
+        fontSize: 13,
+        fontWeight: 700,
+        cursor: "pointer",
+        border: active ? `1px solid ${border}` : "1px solid var(--border)",
+        background: active ? bg : "rgba(10,18,32,0.5)",
+        color: active ? color : "var(--muted)",
+      }}
+    >
+      {children}
+    </button>
+  );
+}
+
+function submitLabel(source) {
+  if (source === "hardware") return "Save Hardware Reading";
+  if (source === "both") return "Store Both";
+  return "Fetch Satellite Data";
+}
+
+function HardwareCaptureState({ activeMode, set, hardwareSampleAvailable }) {
+  return (
+    <div
+      style={{
+        padding: 18,
+        borderRadius: 12,
+        background: "rgba(74,222,128,0.06)",
+        border: "1px solid rgba(74,222,128,0.2)",
+      }}
+    >
+      <div style={{ fontSize: 10, fontFamily: "'Space Mono', monospace", color: "var(--green)", letterSpacing: "0.1em", marginBottom: 8 }}>
+        HARDWARE INGEST
+      </div>
+      <div style={{ fontSize: 16, fontWeight: 700, color: "#fff", marginBottom: 8 }}>
+        Store A Hardware Reading At This Point
+      </div>
+      <div style={{ fontSize: 13, color: "var(--muted-2)", lineHeight: 1.6 }}>
+        Demo creates a realistic reading for testing. ESP32 uses the latest raw device sample and attaches these coordinates so it can be compared with satellite data.
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 14 }}>
+        <button
+          onClick={() => hardwareSampleAvailable && set("hardwareMode", "latest")}
+          disabled={!hardwareSampleAvailable}
+          style={captureModeStyle(activeMode === "latest", "green", !hardwareSampleAvailable)}
+        >
+          {hardwareSampleAvailable ? "ESP32 reading" : "ESP32 unavailable"}
+        </button>
+        <button
+          onClick={() => set("hardwareMode", "demo")}
+          style={captureModeStyle(activeMode === "demo", "amber")}
+        >
+          Demo reading
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function captureModeStyle(active, tone, disabled = false) {
+  const isAmber = tone === "amber";
+
+  return {
+    padding: "8px 10px",
+    borderRadius: 10,
+    fontSize: 12,
+    fontWeight: 700,
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.5 : 1,
+    background: active
+      ? isAmber ? "var(--amber-dim)" : "var(--green-dim)"
+      : "rgba(10,18,32,0.55)",
+    border: active
+      ? isAmber ? "1px solid var(--amber-border)" : "1px solid var(--green-border)"
+      : "1px solid var(--border)",
+    color: active
+      ? isAmber ? "var(--amber)" : "var(--green)"
+      : "var(--muted-2)",
+  };
+}
+
+function SuccessState({ record }) {
+  const records = record?.records || [];
+
+  return (
+    <div style={{ textAlign: "center", padding: "34px 0", color: "var(--green)" }}>
+      <div style={{ fontSize: 34, marginBottom: 12 }}>✓</div>
+      <div style={{ fontWeight: 700, fontSize: 16 }}>
+        {records.length > 1 ? `${records.length} records stored` : "Record stored"}
+      </div>
+      {records.length > 0 && (
+        <div style={{ fontSize: 13, color: "var(--muted-2)", marginTop: 8 }}>
+          {records.map((item) => item.label || item.metric).join(", ")}
+        </div>
+      )}
+      {!records.length && record?.metric && (
+        <div style={{ fontSize: 13, color: "var(--muted-2)", marginTop: 8 }}>
+          {record.label || record.metric}: <span style={{ color: "var(--primary)", fontFamily: "'Space Mono', monospace" }}>{record.value} {record.unit}</span>
+        </div>
+      )}
     </div>
   );
 }
@@ -389,7 +546,7 @@ function Label({ children, error }) {
 function Err({ children }) {
   return (
     <span style={{ fontSize: 10, color: "var(--red)", textTransform: "none", letterSpacing: 0 }}>
-      — {children}
+      - {children}
     </span>
   );
 }
@@ -408,5 +565,47 @@ function inputStyle(hasError) {
     fontFamily: "'DM Sans', system-ui, sans-serif",
     boxShadow: hasError ? "0 0 0 2px rgba(248,113,113,0.1)" : "none",
     transition: "border-color 0.2s, box-shadow 0.2s",
+  };
+}
+
+const closeButtonStyle = {
+  background: "rgba(148,163,184,0.08)",
+  border: "1px solid var(--border)",
+  borderRadius: 8,
+  padding: "5px 9px",
+  color: "var(--muted)",
+  cursor: "pointer",
+  fontSize: 13,
+  lineHeight: 1,
+};
+
+const secondaryButtonStyle = {
+  flex: 1,
+  padding: "10px 0",
+  background: "rgba(148,163,184,0.08)",
+  border: "1px solid var(--border)",
+  color: "var(--muted)",
+  cursor: "pointer",
+};
+
+const errorPanelStyle = {
+  padding: "10px 12px",
+  borderRadius: 10,
+  background: "rgba(248,113,113,0.08)",
+  border: "1px solid rgba(248,113,113,0.22)",
+  color: "var(--red)",
+  fontSize: 12,
+};
+
+function smallActionButtonStyle(disabled) {
+  return {
+    padding: "4px 8px",
+    borderRadius: 8,
+    fontSize: 11,
+    background: disabled ? "rgba(148,163,184,0.05)" : "rgba(34,211,238,0.08)",
+    border: disabled ? "1px solid var(--border)" : "1px solid var(--primary-border)",
+    color: disabled ? "var(--muted)" : "var(--primary)",
+    cursor: disabled ? "not-allowed" : "pointer",
+    opacity: disabled ? 0.65 : 1,
   };
 }

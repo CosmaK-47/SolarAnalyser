@@ -7,9 +7,15 @@ export default function FilterPanel({ filters, setFilters }) {
   const metrics = [
     { value: "irradiance", label: "Irradiance", color: "amber" },
     { value: "temperature", label: "Temperature", color: "cyan" },
-    { value: "humidity", label: "Humidity", color: "violet" },
-    { value: "uv_index", label: "UV Index", color: "amber" },
     { value: "wind_speed", label: "Wind Speed", color: "green" },
+    { value: "humidity", label: "Humidity", color: "violet" },
+    { value: "pressure", label: "Pressure", color: "cyan" },
+    { value: "elevation", label: "Elevation", color: "violet" },
+    { value: "vegetation", label: "Vegetation", color: "green" },
+    { value: "shading", label: "Shading", color: "amber" },
+    { value: "panel_voltage", label: "Panel Voltage", color: "cyan" },
+    { value: "panel_current", label: "Panel Current", color: "cyan" },
+    { value: "panel_power", label: "Panel Power", color: "amber" },
   ];
 
   function toggleSource(val) {

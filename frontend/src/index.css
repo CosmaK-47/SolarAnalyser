@@ -61,6 +61,80 @@ body::before {
   z-index: 0;
 }
 
+/* ===== APP LAYOUT ===== */
+.app-page {
+  position: relative;
+  z-index: 1;
+  width: min(1500px, calc(100% - 40px));
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 28px 0 48px;
+}
+
+.app-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 20px;
+}
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 16px;
+}
+
+.dashboard-grid {
+  display: grid;
+  grid-template-columns: 270px minmax(0, 1fr) 340px;
+  gap: 16px;
+  align-items: start;
+}
+
+.left-rail,
+.main-stack {
+  min-width: 0;
+}
+
+.left-rail,
+.main-stack {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+@media (max-width: 1220px) {
+  .dashboard-grid {
+    grid-template-columns: 260px minmax(0, 1fr);
+  }
+
+  .records-sidebar {
+    grid-column: 1 / -1;
+    position: relative !important;
+    top: auto !important;
+    height: auto !important;
+  }
+}
+
+@media (max-width: 860px) {
+  .app-page {
+    width: min(100% - 24px, 760px);
+    padding-top: 18px;
+  }
+
+  .app-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .stat-grid,
+  .dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===== SCROLLBAR ===== */
 ::-webkit-scrollbar { width: 6px; height: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
@@ -290,3 +364,34 @@ button:hover { background: rgba(34, 211, 238, 0.2); box-shadow: 0 0 12px rgba(34
 }
 
 .leaflet-control-attribution a { color: #64748b !important; }
+
+.solar-map-marker {
+  width: 34px !important;
+  height: 34px !important;
+  margin: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+}
+
+.solar-map-marker__ring,
+.solar-map-marker__dot {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.solar-map-marker__ring {
+  width: 30px;
+  height: 30px;
+  opacity: 0.9;
+}
+
+.solar-map-marker__dot {
+  width: 14px;
+  height: 14px;
+  border: 2px solid #0c1526;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.24);
+}

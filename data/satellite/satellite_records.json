@@ -1,0 +1,621 @@
+[
+    {
+        "id": "sat-20260511173226-68589332",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:32:26.002788+00:00",
+        "date": "2026-05-11",
+        "location": "Point 18.91252, 16.17188",
+        "lat": 18.91252,
+        "lng": 16.17188,
+        "metric": "irradiance",
+        "label": "Irradiance",
+        "value": 6.0,
+        "unit": "W/m²",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511173226-f0645bd8",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:32:26.002788+00:00",
+        "date": "2026-05-11",
+        "location": "Point 18.91252, 16.17188",
+        "lat": 18.91252,
+        "lng": 16.17188,
+        "metric": "temperature",
+        "label": "Temperature",
+        "value": 37.48,
+        "unit": "°C",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511173226-1b83e5d5",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:32:26.002788+00:00",
+        "date": "2026-05-11",
+        "location": "Point 18.91252, 16.17188",
+        "lat": 18.91252,
+        "lng": 16.17188,
+        "metric": "pressure",
+        "label": "Pressure",
+        "value": 956.9,
+        "unit": "hPa",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511173226-578961d3",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:32:26.002788+00:00",
+        "date": "2026-05-11",
+        "location": "Point 18.91252, 16.17188",
+        "lat": 18.91252,
+        "lng": 16.17188,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 5.15,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511173226-057cc6df",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:32:26.002788+00:00",
+        "date": "2026-05-11",
+        "location": "Point 18.91252, 16.17188",
+        "lat": 18.91252,
+        "lng": 16.17188,
+        "metric": "wind_speed",
+        "label": "Wind Speed",
+        "value": 1.45,
+        "unit": "m/s",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-860c4b9b",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "irradiance",
+        "label": "Irradiance",
+        "value": 6.0,
+        "unit": "W/m²",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-2f7785c0",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "temperature",
+        "label": "Temperature",
+        "value": 22.27,
+        "unit": "°C",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-43796227",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "wind_speed",
+        "label": "Wind Speed",
+        "value": 4.48,
+        "unit": "m/s",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-f3493ae8",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 41.95,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-17f82c8d",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "shading",
+        "label": "Shading Factor",
+        "value": 15.0,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "Sentinel-2 estimate",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet."
+        }
+    },
+    {
+        "id": "sat-20260511174602-20a76362",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "pressure",
+        "label": "Pressure",
+        "value": 993.2,
+        "unit": "hPa",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20200511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511174602-211357a2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "elevation",
+        "label": "Elevation",
+        "value": 87.0,
+        "unit": "m",
+        "quality": "modelled",
+        "provider": "Open-Elevation",
+        "details": {
+            "note": "DEM elevation lookup for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511174602-9abae862",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:46:02.881448+00:00",
+        "date": "2026-05-11",
+        "location": "Current GPS",
+        "lat": 47.02208,
+        "lng": 28.83584,
+        "metric": "vegetation",
+        "label": "Vegetation Coverage",
+        "value": 30.0,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "Sentinel-2 estimate",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet."
+        }
+    },
+    {
+        "id": "sat-20260511174915-e14473af",
+        "source": "satellite",
+        "timestamp": "2026-05-11T17:49:15.560893+00:00",
+        "date": "2026-05-11",
+        "location": "Point 46.75190, 72.77344",
+        "lat": 46.7519,
+        "lng": 72.77344,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 57.75,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20050511:1700",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-4a6b48ec",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "irradiance",
+        "label": "Irradiance",
+        "value": 0.0,
+        "unit": "W/m²",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20140511:1800",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-ee1620dd",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "temperature",
+        "label": "Temperature",
+        "value": 16.69,
+        "unit": "°C",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20140511:1800",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-f74170f8",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "shading",
+        "label": "Shading Factor",
+        "value": 15.0,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "Sentinel-2 estimate",
+        "details": {
+            "ndvi_mean": 0.58,
+            "vegetation_coverage_pct": 60.0,
+            "tree_coverage_pct": 30.0,
+            "building_coverage_pct": 5.0,
+            "shading_factor": 0.15,
+            "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet."
+        }
+    },
+    {
+        "id": "sat-20260511180012-8bfb0aed",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "wind_speed",
+        "label": "Wind Speed",
+        "value": 2.55,
+        "unit": "m/s",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20140511:1800",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-463da9a2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 47.15,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20140511:1800",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-72a1327e",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "pressure",
+        "label": "Pressure",
+        "value": 990.8,
+        "unit": "hPa",
+        "quality": "modelled",
+        "provider": "PVGIS TMY",
+        "details": {
+            "pvgis_time_utc": "20140511:1800",
+            "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry."
+        }
+    },
+    {
+        "id": "sat-20260511180012-831265fa",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "elevation",
+        "label": "Elevation",
+        "value": 223.0,
+        "unit": "m",
+        "quality": "modelled",
+        "provider": "Open-Elevation",
+        "details": {
+            "note": "DEM elevation lookup for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511180012-7f8e2bb5",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:00:12.019487+00:00",
+        "date": "2026-05-11",
+        "location": "Point 47.76079, 28.14697",
+        "lat": 47.76079,
+        "lng": 28.14697,
+        "metric": "vegetation",
+        "label": "Vegetation Coverage",
+        "value": 60.0,
+        "unit": "%",
+        "quality": "modelled",
+        "provider": "Sentinel-2 estimate",
+        "details": {
+            "ndvi_mean": 0.58,
+            "vegetation_coverage_pct": 60.0,
+            "tree_coverage_pct": 30.0,
+            "building_coverage_pct": 5.0,
+            "shading_factor": 0.15,
+            "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet."
+        }
+    },
+    {
+        "id": "sat-20260511184911-93977773",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:11.487697+00:00",
+        "date": "2026-05-11",
+        "point_id": "legacy-46.7519-72.7734",
+        "location": "Point 46.75190, 72.77344",
+        "lat": 46.7519,
+        "lng": 72.77344,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 62.1,
+        "unit": "%",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20050511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-3f2a9758",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "irradiance",
+        "label": "Irradiance",
+        "value": 0.0,
+        "unit": "W/m²",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-feb8ded0",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "temperature",
+        "label": "Temperature",
+        "value": 20.42,
+        "unit": "°C",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-5b4a651b",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "wind_speed",
+        "label": "Wind Speed",
+        "value": 4.41,
+        "unit": "m/s",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-c9cb9ce2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 47.9,
+        "unit": "%",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-628169e2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "pressure",
+        "label": "Pressure",
+        "value": 993.1,
+        "unit": "hPa",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-f715a219",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "elevation",
+        "label": "Elevation",
+        "value": 88.0,
+        "unit": "m",
+        "quality": "live",
+        "provider": "Open-Elevation",
+        "details": {
+            "note": "DEM elevation lookup for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-82fee7c2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "vegetation",
+        "label": "Vegetation Coverage",
+        "value": 30.0,
+        "unit": "%",
+        "quality": "live",
+        "provider": "Sentinel-2 Live",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-42efb7fd",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "shading",
+        "label": "Shading Factor",
+        "value": 15.0,
+        "unit": "%",
+        "quality": "live",
+        "provider": "Sentinel-2 Live",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Live satellite record for the selected point."
+        }
+    }
+]
