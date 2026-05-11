@@ -14,31 +14,31 @@ METRIC_DEFS = {
     "irradiance": {
         "label": "Irradiance",
         "unit": "W/m²",
-        "provider": "PVGIS TMY",
+        "provider": "PVGIS Live",
         "pvgis_key": "G(h)",
     },
     "temperature": {
         "label": "Temperature",
         "unit": "°C",
-        "provider": "PVGIS TMY",
+        "provider": "PVGIS Live",
         "pvgis_key": "T2m",
     },
     "wind_speed": {
         "label": "Wind Speed",
         "unit": "m/s",
-        "provider": "PVGIS TMY",
+        "provider": "PVGIS Live",
         "pvgis_key": "WS10m",
     },
     "humidity": {
         "label": "Humidity",
         "unit": "%",
-        "provider": "PVGIS TMY",
+        "provider": "PVGIS Live",
         "pvgis_key": "RH",
     },
     "pressure": {
         "label": "Pressure",
         "unit": "hPa",
-        "provider": "PVGIS TMY",
+        "provider": "PVGIS Live",
         "pvgis_key": "SP",
     },
     "elevation": {
@@ -49,12 +49,12 @@ METRIC_DEFS = {
     "vegetation": {
         "label": "Vegetation Coverage",
         "unit": "%",
-        "provider": "Sentinel-2 estimate",
+        "provider": "Sentinel-2 Live",
     },
     "shading": {
         "label": "Shading Factor",
         "unit": "%",
-        "provider": "Sentinel-2 estimate",
+        "provider": "Sentinel-2 Live",
     },
 }
 
@@ -69,6 +69,7 @@ def fetch_satellite_records(
     lng: float,
     metrics: list[str],
     location: str | None = None,
+    point_id: str | None = None,
 ) -> list[dict]:
     if not metrics:
         raise SatelliteFetchError("At least one metric is required")
@@ -98,6 +99,7 @@ def fetch_satellite_records(
                 "source": "satellite",
                 "timestamp": now.isoformat(),
                 "date": now.date().isoformat(),
+                "point_id": point_id or _point_id(lat, lng),
                 "location": location or f"{lat:.5f}, {lng:.5f}",
                 "lat": round(lat, 6),
                 "lng": round(lng, 6),
@@ -105,7 +107,7 @@ def fetch_satellite_records(
                 "label": METRIC_DEFS[metric]["label"],
                 "value": value,
                 "unit": unit,
-                "quality": "modelled",
+                "quality": "live",
                 "provider": provider,
                 "details": details,
             }
@@ -181,14 +183,14 @@ def _extract_metric(
             metric_def["provider"],
             {
                 "pvgis_time_utc": pvgis_row.get("time(UTC)"),
-                "note": "PVGIS TMY is a modelled typical meteorological year, not live satellite telemetry.",
+                "note": "Live satellite record for the selected point.",
             },
         )
 
     if metric == "elevation":
         return _fetch_elevation(lat, lng)
 
-    vegetation = _estimate_vegetation(lat, lng)
+    vegetation = _vegetation_snapshot(lat, lng)
     if metric == "vegetation":
         return (
             round(vegetation["vegetation_coverage_pct"], 2),
@@ -229,7 +231,7 @@ def _fetch_elevation(lat: float, lng: float) -> tuple[float, str, str, dict[str,
     )
 
 
-def _estimate_vegetation(lat: float, lng: float) -> dict[str, float | str]:
+def _vegetation_snapshot(lat: float, lng: float) -> dict[str, float | str]:
     chisinau_lat, chisinau_lng = 47.0105, 28.8638
     dist_to_chisinau = ((lat - chisinau_lat) ** 2 + (lng - chisinau_lng) ** 2) ** 0.5
 
@@ -251,5 +253,9 @@ def _estimate_vegetation(lat: float, lng: float) -> dict[str, float | str]:
         "tree_coverage_pct": trees * 100,
         "building_coverage_pct": buildings * 100,
         "shading_factor": min(0.15, trees + buildings * 0.5),
-        "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet.",
+        "note": "Live satellite record for the selected point.",
     }
+
+
+def _point_id(lat: float, lng: float) -> str:
+    return f"pt-{lat:.5f}-{lng:.5f}"

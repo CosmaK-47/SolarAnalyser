@@ -30,5 +30,22 @@
         "lng": 28.83584,
         "location": "Current GPS",
         "received_at": "2026-05-11T20:48:47.441416"
+    },
+    {
+        "device_id": "solar_node_dev",
+        "temperature": 23.74,
+        "humidity": 57.33,
+        "irradiance": 34.9,
+        "panel_voltage": 5.0,
+        "panel_current": 0.02,
+        "panel_power": 0.1,
+        "capture_source": "development_simulation",
+        "status": "simulated",
+        "measurement_id": "hw-capture-20260511214940-6edd665e",
+        "point_id": "pt-47.01880-28.83912",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "location": "Current GPS",
+        "received_at": "2026-05-11T21:49:40.013920"
     }
 ]

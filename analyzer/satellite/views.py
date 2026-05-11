@@ -44,6 +44,7 @@ def fetch_satellite_data(request):
         lat = float(payload["lat"])
         lng = float(payload["lng"])
         location = str(payload.get("location") or "").strip() or None
+        point_id = str(payload.get("point_id") or "").strip() or None
 
         metrics = payload.get("metrics", payload.get("metric"))
         if isinstance(metrics, str):
@@ -56,6 +57,7 @@ def fetch_satellite_data(request):
             lng=lng,
             metrics=metrics,
             location=location,
+            point_id=point_id,
         )
         total = save_satellite_records(records)
 

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 
 import { readBrowserPosition } from "../utils/geolocation";
+import { buildPointId } from "../utils/pointRecords";
 
 const METRICS = [
   { value: "irradiance", label: "Irradiance", unit: "W/m²", color: "amber" },
@@ -26,14 +27,16 @@ const colorMap = {
 
 export default function AddDataModal({ prefill, hardwareSampleAvailable = false, onAdd, onClose }) {
   const hasPrefilledCoordinates = prefill?.lat != null && prefill?.lng != null;
+  const initialSource = prefill?.source || (hasPrefilledCoordinates ? "both" : "satellite");
   const [form, setForm] = useState({
-    source: prefill?.source || "satellite",
+    source: initialSource,
     location: prefill?.location || "",
     lat: prefill?.lat != null ? Number(prefill.lat).toFixed(5) : "",
     lng: prefill?.lng != null ? Number(prefill.lng).toFixed(5) : "",
     metrics: [prefill?.metric || "irradiance"],
-    hardwareMode: hardwareSampleAvailable ? "latest" : "demo",
-    coordinateSource: hasPrefilledCoordinates ? "map" : "manual",
+    hardwareMode: prefill?.hardwareMode || (hardwareSampleAvailable ? "latest" : "demo"),
+    coordinateSource: prefill?.coordinateSource || (hasPrefilledCoordinates ? "map" : "manual"),
+    pointId: prefill?.pointId || prefill?.point_id || "",
   });
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
@@ -58,7 +61,7 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
     const lat = Number(form.lat);
     const lng = Number(form.lng);
 
-    if (form.source === "satellite" && form.metrics.length === 0) errs.metrics = "Select at least one";
+    if ((form.source === "satellite" || form.source === "both") && form.metrics.length === 0) errs.metrics = "Select at least one";
     if (form.lat === "" || Number.isNaN(lat) || lat < -90 || lat > 90) errs.lat = "Invalid latitude";
     if (form.lng === "" || Number.isNaN(lng) || lng < -180 || lng > 180) errs.lng = "Invalid longitude";
 
@@ -81,7 +84,8 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
         location: form.location.trim() || `Point ${Number(form.lat).toFixed(5)}, ${Number(form.lng).toFixed(5)}`,
         lat: Number(form.lat),
         lng: Number(form.lng),
-        metrics: form.source === "satellite" ? form.metrics : undefined,
+        pointId: form.pointId || buildPointId(form.lat, form.lng),
+        metrics: form.source === "satellite" || form.source === "both" ? form.metrics : undefined,
         mode: effectiveHardwareMode,
       });
       setResult(response?.records ? { records: response.records } : response?.measurement || true);
@@ -105,6 +109,9 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
         lng: position.coords.longitude.toFixed(5),
         location: current.location.trim() ? current.location : "Current GPS",
         coordinateSource: "gps",
+        source: hardwareSampleAvailable && current.source === "satellite" ? "both" : current.source,
+        hardwareMode: hardwareSampleAvailable ? "latest" : current.hardwareMode,
+        pointId: buildPointId(position.coords.latitude, position.coords.longitude),
       }));
       setErrors((current) => ({ ...current, lat: undefined, lng: undefined }));
     } catch (error) {
@@ -138,10 +145,13 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
 
   const selectedMetrics = METRICS.filter((metric) => form.metrics.includes(metric.value));
   const allMetricsSelected = selectedMetrics.length === METRICS.length;
+  const usesHardware = form.source === "hardware" || form.source === "both";
+  const usesSatellite = form.source === "satellite" || form.source === "both";
   const effectiveHardwareMode = hardwareSampleAvailable ? form.hardwareMode : "demo";
   const coordinateLabel = useMemo(() => {
     if (form.coordinateSource === "gps") return "Current GPS";
     if (form.coordinateSource === "map") return "Map point";
+    if (form.coordinateSource === "stored") return "Stored point";
     return "Manual coordinate";
   }, [form.coordinateSource]);
 
@@ -200,12 +210,15 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
             <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
               <div>
                 <Label>Source</Label>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 6 }}>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 6 }}>
                   <SourceButton active={form.source === "satellite"} onClick={() => set("source", "satellite")} tone="satellite">
-                    Satellite data
+                    Satellite
                   </SourceButton>
                   <SourceButton active={form.source === "hardware"} onClick={() => set("source", "hardware")} tone="hardware">
-                    Hardware reading
+                    Hardware
+                  </SourceButton>
+                  <SourceButton active={form.source === "both"} onClick={() => set("source", "both")} tone="both">
+                    Both
                   </SourceButton>
                 </div>
               </div>
@@ -266,6 +279,7 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
                     onChange={(e) => {
                       set("lat", e.target.value);
                       if (!hasPrefilledCoordinates) set("coordinateSource", "manual");
+                      set("pointId", "");
                     }}
                     placeholder="Latitude"
                     step="0.00001"
@@ -277,6 +291,7 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
                     onChange={(e) => {
                       set("lng", e.target.value);
                       if (!hasPrefilledCoordinates) set("coordinateSource", "manual");
+                      set("pointId", "");
                     }}
                     placeholder="Longitude"
                     step="0.00001"
@@ -285,13 +300,7 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
                 </div>
               </div>
 
-              {form.source === "hardware" ? (
-                <HardwareCaptureState
-                  activeMode={effectiveHardwareMode}
-                  set={set}
-                  hardwareSampleAvailable={hardwareSampleAvailable}
-                />
-              ) : (
+              {usesSatellite && (
                 <>
                   <div>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 12, alignItems: "center" }}>
@@ -348,6 +357,14 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
                 </>
               )}
 
+              {usesHardware && (
+                <HardwareCaptureState
+                  activeMode={effectiveHardwareMode}
+                  set={set}
+                  hardwareSampleAvailable={hardwareSampleAvailable}
+                />
+              )}
+
               {submitError && (
                 <div style={errorPanelStyle}>
                   {submitError}
@@ -365,17 +382,17 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
                     flex: 2,
                     padding: "10px 0",
                     opacity: submitting ? 0.65 : 1,
-                    background: form.source === "hardware"
+                    background: usesHardware && !usesSatellite
                       ? "linear-gradient(135deg, rgba(74,222,128,0.2), rgba(74,222,128,0.1))"
                       : "linear-gradient(135deg, rgba(34,211,238,0.2), rgba(34,211,238,0.1))",
-                    border: form.source === "hardware" ? "1px solid var(--green-border)" : "1px solid var(--primary-border)",
-                    color: form.source === "hardware" ? "var(--green)" : "var(--primary)",
+                    border: usesHardware && !usesSatellite ? "1px solid var(--green-border)" : "1px solid var(--primary-border)",
+                    color: usesHardware && !usesSatellite ? "var(--green)" : "var(--primary)",
                     fontWeight: 700,
                     cursor: submitting ? "wait" : "pointer",
-                    boxShadow: form.source === "hardware" ? "0 0 20px rgba(74,222,128,0.1)" : "0 0 20px rgba(34,211,238,0.1)",
+                    boxShadow: usesHardware && !usesSatellite ? "0 0 20px rgba(74,222,128,0.1)" : "0 0 20px rgba(34,211,238,0.1)",
                   }}
                 >
-                  {submitting ? "Saving..." : form.source === "hardware" ? "Save Hardware Reading" : "Fetch Satellite Data"}
+                  {submitting ? "Saving..." : submitLabel(form.source)}
                 </button>
               </div>
             </div>
@@ -395,9 +412,10 @@ export default function AddDataModal({ prefill, hardwareSampleAvailable = false,
 
 function SourceButton({ active, onClick, tone, children }) {
   const isHardware = tone === "hardware";
-  const color = isHardware ? "var(--green)" : "var(--primary)";
-  const border = isHardware ? "var(--green-border)" : "var(--primary-border)";
-  const bg = isHardware ? "var(--green-dim)" : "var(--primary-dim)";
+  const isBoth = tone === "both";
+  const color = isHardware ? "var(--green)" : isBoth ? "var(--amber)" : "var(--primary)";
+  const border = isHardware ? "var(--green-border)" : isBoth ? "var(--amber-border)" : "var(--primary-border)";
+  const bg = isHardware ? "var(--green-dim)" : isBoth ? "var(--amber-dim)" : "var(--primary-dim)";
 
   return (
     <button
@@ -416,6 +434,12 @@ function SourceButton({ active, onClick, tone, children }) {
       {children}
     </button>
   );
+}
+
+function submitLabel(source) {
+  if (source === "hardware") return "Save Hardware Reading";
+  if (source === "both") return "Store Both";
+  return "Fetch Satellite Data";
 }
 
 function HardwareCaptureState({ activeMode, set, hardwareSampleAvailable }) {

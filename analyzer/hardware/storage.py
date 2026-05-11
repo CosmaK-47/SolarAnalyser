@@ -56,6 +56,7 @@ def capture_location_measurement(
     lng: float,
     location: str | None = None,
     mode: str = "latest",
+    point_id: str | None = None,
 ) -> tuple[dict, int]:
     measurements = load_iot_measurements()
     normalized_mode = (mode or "demo").lower()
@@ -79,6 +80,7 @@ def capture_location_measurement(
 
     measurement.update({
         "measurement_id": f"hw-capture-{datetime.now().strftime('%Y%m%d%H%M%S')}-{uuid4().hex[:8]}",
+        "point_id": point_id or _point_id(lat, lng),
         "lat": round(lat, 6),
         "lng": round(lng, 6),
         "location": location or f"Hardware point {lat:.5f}, {lng:.5f}",
@@ -147,6 +149,7 @@ def normalize_iot_measurements(measurements: list[dict] | None = None) -> list[d
                 "source": "hardware",
                 "timestamp": timestamp,
                 "date": timestamp[:10] if isinstance(timestamp, str) else None,
+                "point_id": measurement.get("point_id") or _point_id(measurement.get("lat"), measurement.get("lng")),
                 "deviceId": device_id,
                 "location": location,
                 "lat": measurement.get("lat"),
@@ -189,3 +192,13 @@ def delete_iot_measurements_by_record_ids(record_ids: list[str]) -> int:
     )
 
     return deleted
+
+
+def _point_id(lat: float | None, lng: float | None) -> str | None:
+    if lat is None or lng is None:
+        return None
+
+    try:
+        return f"pt-{float(lat):.5f}-{float(lng):.5f}"
+    except (TypeError, ValueError):
+        return None

@@ -23,7 +23,7 @@ export function deleteSatelliteRecords(ids) {
   });
 }
 
-export function fetchSatelliteData({ lat, lng, metric, metrics, location }) {
+export function fetchSatelliteData({ lat, lng, metric, metrics, location, pointId, point_id }) {
   return request("/api/satellite/fetch/", {
     method: "POST",
     headers: jsonHeaders,
@@ -31,6 +31,7 @@ export function fetchSatelliteData({ lat, lng, metric, metrics, location }) {
       lat,
       lng,
       location,
+      point_id: pointId || point_id,
       metrics: metrics || metric,
     }),
   });
@@ -40,11 +41,11 @@ export function loadHardwareMeasurements() {
   return request("/api/hardware/measurements/");
 }
 
-export function captureHardwareData({ lat, lng, location, mode = "latest" }) {
+export function captureHardwareData({ lat, lng, location, mode = "latest", pointId, point_id }) {
   return request("/api/hardware/capture/", {
     method: "POST",
     headers: jsonHeaders,
-    body: JSON.stringify({ lat, lng, location, mode }),
+    body: JSON.stringify({ lat, lng, location, mode, point_id: pointId || point_id }),
   });
 }
 

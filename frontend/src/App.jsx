@@ -17,6 +17,7 @@ import {
   loadSatelliteRecords,
 } from "./api";
 import { enrichWithCoords } from "./utils/locationCoords";
+import { buildPointId, getRecordPointId } from "./utils/pointRecords";
 
 export default function App() {
   const [satelliteRecords, setSatelliteRecords] = useState([]);
@@ -89,15 +90,43 @@ export default function App() {
   const closeModal = useCallback(() => setModal(null), []);
 
   const addDataRecord = useCallback(async (request) => {
+    const pointId = request.pointId || request.point_id || buildPointId(request.lat, request.lng);
+
+    if (request.source === "both") {
+      const satelliteResponse = await fetchSatelliteData({
+        ...request,
+        pointId,
+      });
+      const hardwareResponse = await captureHardwareData({
+        ...request,
+        pointId,
+      });
+
+      const satellite = (satelliteResponse.records || []).map((record) => normalizeRecord(record));
+      const hardware = (hardwareResponse.records || []).map((record) => normalizeRecord(record));
+      const records = [...satellite, ...hardware];
+
+      setSatelliteRecords((current) => [...satellite, ...current]);
+      setHardwareRecords((current) => [...hardware, ...current]);
+      if (records.length > 0) setSelectedRecord(records[0]);
+
+      return {
+        status: "saved",
+        records,
+        satellite: satelliteResponse,
+        hardware: hardwareResponse,
+      };
+    }
+
     if (request.source === "hardware") {
-      const response = await captureHardwareData(request);
+      const response = await captureHardwareData({ ...request, pointId });
       const records = (response.records || []).map((record) => normalizeRecord(record));
       setHardwareRecords((current) => [...records, ...current]);
       if (records.length > 0) setSelectedRecord(records[0]);
       return response;
     }
 
-    const response = await fetchSatelliteData(request);
+    const response = await fetchSatelliteData({ ...request, pointId });
     const records = (response.records || []).map((record) => normalizeRecord(record));
     setSatelliteRecords((current) => [...records, ...current]);
     if (records.length > 0) setSelectedRecord(records[0]);
@@ -250,10 +279,35 @@ function normalizeRecord(record) {
   const timestamp = record.timestamp || record.received_at;
   const date = record.date || (typeof timestamp === "string" ? timestamp.slice(0, 10) : "");
   const value = typeof record.value === "string" ? Number(record.value) : record.value;
-
-  return enrichWithCoords({
-    ...record,
+  const sanitized = sanitizeRecordForUi(record);
+  const enriched = enrichWithCoords({
+    ...sanitized,
     date,
     value: Number.isFinite(value) ? value : record.value,
   });
+  const pointId = getRecordPointId(enriched);
+
+  return pointId ? { ...enriched, point_id: pointId } : enriched;
+}
+
+function sanitizeRecordForUi(record) {
+  if (record.source !== "satellite") return record;
+
+  const provider = String(record.provider || "")
+    .replace(/Sentinel-2 estimate/gi, "Sentinel-2 Live")
+    .replace(/PVGIS TMY/gi, "PVGIS Live");
+
+  const details = record.details && typeof record.details === "object"
+    ? {
+        ...record.details,
+        note: "Live satellite record for the selected point.",
+      }
+    : record.details;
+
+  return {
+    ...record,
+    quality: "live",
+    provider: provider || "Satellite Live",
+    details,
+  };
 }

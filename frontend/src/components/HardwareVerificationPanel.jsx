@@ -1,12 +1,17 @@
 import { useMemo, useState } from "react";
 
 import { readBrowserPosition } from "../utils/geolocation";
-
-const VERIFY_METRICS = [
-  { value: "irradiance", label: "Irradiance", unit: "W/m²" },
-  { value: "temperature", label: "Temperature", unit: "°C" },
-  { value: "humidity", label: "Humidity", unit: "%" },
-];
+import {
+  COMPARISON_METRICS,
+  buildComparableRows,
+  buildComparison,
+  buildPointGroups,
+  buildPointId,
+  findPointForRecord,
+  getMetricMeta,
+  getRecordPointId,
+  pointFromRecord,
+} from "../utils/pointRecords";
 
 export default function HardwareVerificationPanel({
   records,
@@ -16,36 +21,53 @@ export default function HardwareVerificationPanel({
   onFetchSatellite,
   onCaptureHardware,
 }) {
-  const [coords, setCoords] = useState(null);
+  const [selectedPointId, setSelectedPointId] = useState("");
+  const [draftPoint, setDraftPoint] = useState(null);
   const [metric, setMetric] = useState("irradiance");
   const [hardwareMode, setHardwareMode] = useState(hardwareSampleAvailable ? "latest" : "demo");
   const [status, setStatus] = useState("");
+  const [showPointPicker, setShowPointPicker] = useState(false);
   const [loadingGps, setLoadingGps] = useState(false);
   const [loadingSatellite, setLoadingSatellite] = useState(false);
   const [loadingHardware, setLoadingHardware] = useState(false);
 
+  const pointGroups = useMemo(() => buildPointGroups(records), [records]);
+  const selectedRecordPoint = useMemo(() => {
+    return findPointForRecord(pointGroups, selectedRecord) || pointFromRecord(selectedRecord);
+  }, [pointGroups, selectedRecord]);
+
+  const effectiveSelectedPointId = selectedPointId || pointGroups[0]?.pointId || "";
+  const storedPoint = useMemo(() => {
+    if (!effectiveSelectedPointId) return null;
+    return pointGroups.find((point) => point.pointId === effectiveSelectedPointId) || null;
+  }, [pointGroups, effectiveSelectedPointId]);
+
+  const activePoint = draftPoint || storedPoint || selectedRecordPoint || pointGroups[0] || null;
+  const selectedMetric = getMetricMeta(metric);
   const effectiveHardwareMode = hardwareSampleAvailable ? hardwareMode : "demo";
-  const selectedMetric = VERIFY_METRICS.find((item) => item.value === metric);
-  const selectedPoint = useMemo(() => recordToPoint(selectedRecord), [selectedRecord]);
-  const activeCoords = coords || selectedPoint;
+  const metricState = useMemo(() => activePoint?.metrics?.[metric] || {}, [activePoint, metric]);
+  const comparison = useMemo(() => buildComparison(metricState.satellite, metricState.hardware), [metricState]);
+  const readyRows = useMemo(() => buildComparableRows(activePoint), [activePoint]);
+  const guidance = buildGuidance({ activePoint, metricState, comparison, metricLabel: selectedMetric.label });
   const metricAvailableForHardware = isHardwareMetricAvailable(metric, effectiveHardwareMode, hardwareLatestRaw);
-  const matching = useMemo(() => findMatchingRecords(records, activeCoords, metric), [records, activeCoords, metric]);
-  const comparison = useMemo(() => buildComparison(matching.satellite, matching.hardware), [matching]);
-  const guidance = buildGuidance({ activeCoords, matching, comparison, metricLabel: selectedMetric?.label });
 
   async function readCurrentGps() {
     setStatus("");
-
     setLoadingGps(true);
+
     try {
       const position = await readBrowserPosition();
-      setCoords({
+      const point = makePoint({
         lat: position.coords.latitude,
         lng: position.coords.longitude,
+        name: "Current GPS",
+        sourceLabel: "GPS",
         accuracy: position.coords.accuracy,
-        label: "Current GPS",
       });
-      setStatus("GPS coordinates captured. Now fetch satellite and save hardware for the same metric.");
+      setDraftPoint(point);
+      setSelectedPointId(point.pointId);
+      setHardwareMode(hardwareSampleAvailable ? "latest" : "demo");
+      setStatus("GPS point selected. Save satellite, hardware, or both; comparison will use the stored records.");
     } catch (error) {
       setStatus(error.message || "Could not read GPS coordinates.");
     } finally {
@@ -54,25 +76,33 @@ export default function HardwareVerificationPanel({
   }
 
   function useSelectedRecordLocation() {
-    if (selectedRecord?.lat == null || selectedRecord?.lng == null) {
+    if (!selectedRecordPoint) {
       setStatus("The selected record has no coordinates.");
       return;
     }
 
-    setCoords({
-      lat: Number(selectedRecord.lat),
-      lng: Number(selectedRecord.lng),
-      label: selectedRecord.location || "Selected record",
-    });
-    if (VERIFY_METRICS.some((item) => item.value === selectedRecord.metric)) {
+    const pointId = getRecordPointId(selectedRecord) || selectedRecordPoint.pointId;
+    setDraftPoint(null);
+    setSelectedPointId(pointId);
+    if (COMPARISON_METRICS.some((item) => item.value === selectedRecord?.metric)) {
       setMetric(selectedRecord.metric);
     }
-    setStatus("Selected record location loaded for comparison.");
+    setStatus("Selected record point loaded. Comparison is based on records already stored for this point.");
+  }
+
+  function choosePoint(point) {
+    setDraftPoint(null);
+    setSelectedPointId(point.pointId);
+    const firstReady = point.comparableRows?.[0]?.metric;
+    const firstMetric = firstReady || COMPARISON_METRICS.find((item) => point.metrics[item.value])?.value;
+    if (firstMetric) setMetric(firstMetric);
+    setStatus("");
+    setShowPointPicker(false);
   }
 
   async function fetchSatelliteForPoint() {
-    if (!activeCoords) {
-      setStatus("Choose GPS or a selected record location first.");
+    if (!activePoint) {
+      setStatus("Choose a point first.");
       return;
     }
 
@@ -82,12 +112,15 @@ export default function HardwareVerificationPanel({
     try {
       await onFetchSatellite({
         source: "satellite",
-        location: activeCoords.label || "Comparison point",
-        lat: activeCoords.lat,
-        lng: activeCoords.lng,
+        location: activePoint.name || "Comparison point",
+        lat: activePoint.lat,
+        lng: activePoint.lng,
+        pointId: activePoint.pointId || buildPointId(activePoint.lat, activePoint.lng),
         metric,
       });
-      setStatus("Satellite record stored. Save hardware for the same point and metric to compare.");
+      setDraftPoint(null);
+      setSelectedPointId(activePoint.pointId || buildPointId(activePoint.lat, activePoint.lng));
+      setStatus("Satellite record stored. It is now available for stored comparison at this point.");
     } catch (error) {
       setStatus(error.message || "Satellite fetch failed.");
     } finally {
@@ -96,13 +129,13 @@ export default function HardwareVerificationPanel({
   }
 
   async function captureHardwareForPoint() {
-    if (!activeCoords) {
-      setStatus("Choose GPS or a selected record location first.");
+    if (!activePoint) {
+      setStatus("Choose a point first.");
       return;
     }
 
     if (!metricAvailableForHardware) {
-      setStatus(`${selectedMetric?.label || metric} is not present in the latest ESP32 sample.`);
+      setStatus(`${selectedMetric.label} is not present in the latest ESP32 sample.`);
       return;
     }
 
@@ -112,14 +145,17 @@ export default function HardwareVerificationPanel({
     try {
       await onCaptureHardware({
         source: "hardware",
-        location: activeCoords.label || "Comparison point",
-        lat: activeCoords.lat,
-        lng: activeCoords.lng,
+        location: activePoint.name || "Comparison point",
+        lat: activePoint.lat,
+        lng: activePoint.lng,
+        pointId: activePoint.pointId || buildPointId(activePoint.lat, activePoint.lng),
         mode: effectiveHardwareMode,
       });
+      setDraftPoint(null);
+      setSelectedPointId(activePoint.pointId || buildPointId(activePoint.lat, activePoint.lng));
       setStatus(effectiveHardwareMode === "demo"
-        ? "Demo hardware readings stored for this point."
-        : "ESP32 hardware readings stored for this point.");
+        ? "Demo hardware reading stored. It can now be compared with stored satellite records."
+        : "ESP32 hardware reading stored. It can now be compared with stored satellite records.");
     } catch (error) {
       setStatus(error.message || "Hardware capture failed.");
     } finally {
@@ -132,30 +168,47 @@ export default function HardwareVerificationPanel({
       <div style={{ display: "flex", justifyContent: "space-between", gap: 18, alignItems: "flex-start", marginBottom: 18 }}>
         <div>
           <div className="section-label" style={{ marginBottom: 3 }}>Field Verification</div>
-          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>Compare Satellite And Hardware</div>
+          <div style={{ fontSize: 17, fontWeight: 700, color: "#fff" }}>Stored Satellite And Hardware Comparison</div>
           <div style={{ fontSize: 13, color: "var(--muted)", marginTop: 4, maxWidth: 820 }}>
-            Match = same point and same metric from both sources. Pick a record in the browser, use GPS, or click the map, then store the missing side.
+            Pick a point from stored data, GPS, selected record, or the map. Comparison uses saved records with the same point and metric.
           </div>
         </div>
-        <span style={statusBadgeStyle}>
-          RECORD MATCHING
-        </span>
+
+        <div style={{ position: "relative", flexShrink: 0 }}>
+          <button onClick={() => setShowPointPicker((value) => !value)} style={pointPickerButtonStyle}>
+            Available Points
+            <span style={{ color: "var(--muted-2)", fontFamily: "'Space Mono', monospace" }}>{pointGroups.length}</span>
+          </button>
+          {showPointPicker && (
+            <PointPicker
+              points={pointGroups}
+              activePointId={activePoint?.pointId}
+              onPick={choosePoint}
+            />
+          )}
+        </div>
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))", gap: 14 }}>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))", gap: 14 }}>
         <div className="card">
           <div className="section-label" style={{ marginBottom: 10 }}>Comparison Point</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
-            <ValuePill label="Lat" value={activeCoords ? activeCoords.lat.toFixed(5) : "not set"} />
-            <ValuePill label="Lng" value={activeCoords ? activeCoords.lng.toFixed(5) : "not set"} />
+          <div style={{ fontSize: 14, fontWeight: 700, color: "#fff", marginBottom: 8, minHeight: 22 }}>
+            {activePoint?.name || "No point selected"}
           </div>
-          <ValuePill label="Point Source" value={coords ? coords.label : selectedPoint ? "Selected record" : "not set"} />
-          {activeCoords?.accuracy != null && (
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <ValuePill label="Lat" value={activePoint ? activePoint.lat.toFixed(5) : "not set"} />
+            <ValuePill label="Lng" value={activePoint ? activePoint.lng.toFixed(5) : "not set"} />
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+            <ValuePill label="Satellite" value={activePoint ? String(activePoint.satelliteCount || 0) : "0"} tone="cyan" />
+            <ValuePill label="Hardware" value={activePoint ? String(activePoint.hardwareCount || 0) : "0"} tone="green" />
+          </div>
+          {activePoint?.accuracy != null && (
             <div style={{ fontSize: 12, color: "var(--muted)", marginBottom: 10 }}>
-              GPS accuracy: {Math.round(activeCoords.accuracy)} m
+              GPS accuracy: {Math.round(activePoint.accuracy)} m
             </div>
           )}
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
             <button onClick={readCurrentGps} disabled={loadingGps} style={buttonStyle("primary", loadingGps)}>
               {loadingGps ? "Reading..." : "Use GPS"}
             </button>
@@ -166,32 +219,78 @@ export default function HardwareVerificationPanel({
         </div>
 
         <div className="card">
-          <div className="section-label" style={{ marginBottom: 10 }}>Metric And Satellite</div>
-          <select value={metric} onChange={(event) => setMetric(event.target.value)} style={{ marginBottom: 10 }}>
-            {VERIFY_METRICS.map((item) => {
-              const available = isHardwareMetricAvailable(item.value, effectiveHardwareMode, hardwareLatestRaw);
-              return (
-                <option key={item.value} value={item.value} disabled={!available}>
-                  {item.label}{available ? "" : " - no ESP32 value"}
-                </option>
-              );
-            })}
-          </select>
-          <button onClick={fetchSatelliteForPoint} disabled={loadingSatellite || !activeCoords} style={buttonStyle("primary", loadingSatellite || !activeCoords)}>
-            {loadingSatellite ? "Fetching..." : "Fetch Satellite Record"}
-          </button>
+          <div className="section-label" style={{ marginBottom: 10 }}>Stored Matches</div>
+          {readyRows.length > 0 ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: 7 }}>
+              {readyRows.map((row) => (
+                <button
+                  key={row.metric}
+                  onClick={() => setMetric(row.metric)}
+                  style={matchRowStyle(metric === row.metric)}
+                >
+                  <span>
+                    <span style={{ fontWeight: 700 }}>{row.label}</span>
+                    <span style={{ color: "var(--muted)", marginLeft: 6 }}>
+                      Δ {row.diff.toFixed(2)} {row.unit}
+                    </span>
+                  </span>
+                  <span style={{ color: row.match >= 90 ? "var(--green)" : "var(--amber)", fontFamily: "'Space Mono', monospace" }}>
+                    {row.match.toFixed(1)}%
+                  </span>
+                </button>
+              ))}
+            </div>
+          ) : (
+            <div style={emptyStateStyle}>
+              No complete satellite and hardware pair is stored for this point yet.
+            </div>
+          )}
+
           <div style={{ marginTop: 12 }}>
-            <ValuePill
-              label="Satellite"
-              value={matching.satellite ? `${matching.satellite.value} ${matching.satellite.unit || selectedMetric?.unit || ""}` : "missing for this point"}
-              tone="cyan"
-            />
+            <div className="section-label" style={{ marginBottom: 7 }}>Metric</div>
+            <select value={metric} onChange={(event) => setMetric(event.target.value)}>
+              {COMPARISON_METRICS.map((item) => (
+                <option key={item.value} value={item.value}>
+                  {item.label}
+                </option>
+              ))}
+            </select>
           </div>
         </div>
 
         <div className="card">
-          <div className="section-label" style={{ marginBottom: 10 }}>Hardware</div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginBottom: 10 }}>
+          <div className="section-label" style={{ marginBottom: 10 }}>Selected Metric Data</div>
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8 }}>
+            <ValuePill
+              label="Satellite"
+              value={metricState.satellite ? `${metricState.satellite.value} ${metricState.satellite.unit || selectedMetric.unit}` : "missing"}
+              tone="cyan"
+            />
+            <ValuePill
+              label="Hardware"
+              value={metricState.hardware ? `${metricState.hardware.value} ${metricState.hardware.unit || selectedMetric.unit}` : "missing"}
+              tone="green"
+            />
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
+            <button
+              onClick={fetchSatelliteForPoint}
+              disabled={loadingSatellite || !activePoint}
+              style={buttonStyle("primary", loadingSatellite || !activePoint)}
+            >
+              {loadingSatellite ? "Fetching..." : metricState.satellite ? "Refresh Satellite" : "Fetch Satellite"}
+            </button>
+            <button
+              onClick={captureHardwareForPoint}
+              disabled={loadingHardware || !activePoint || !metricAvailableForHardware}
+              style={buttonStyle("green", loadingHardware || !activePoint || !metricAvailableForHardware)}
+            >
+              {loadingHardware ? "Saving..." : "Save Hardware"}
+            </button>
+          </div>
+
+          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 8, marginTop: 10 }}>
             <button
               onClick={() => hardwareSampleAvailable && setHardwareMode("latest")}
               disabled={!hardwareSampleAvailable}
@@ -202,20 +301,6 @@ export default function HardwareVerificationPanel({
             <button onClick={() => setHardwareMode("demo")} style={modeButtonStyle(effectiveHardwareMode === "demo", "amber")}>
               Demo
             </button>
-          </div>
-          <button
-            onClick={captureHardwareForPoint}
-            disabled={loadingHardware || !activeCoords || !metricAvailableForHardware}
-            style={buttonStyle("primary", loadingHardware || !activeCoords || !metricAvailableForHardware)}
-          >
-            {loadingHardware ? "Saving..." : "Save Hardware Reading"}
-          </button>
-          <div style={{ marginTop: 12 }}>
-            <ValuePill
-              label="Hardware"
-              value={matching.hardware ? `${matching.hardware.value} ${matching.hardware.unit || selectedMetric?.unit || ""}` : metricAvailableForHardware ? "missing for this point" : "not in ESP32 sample"}
-              tone="green"
-            />
           </div>
         </div>
       </div>
@@ -234,7 +319,7 @@ export default function HardwareVerificationPanel({
         }}>
           <div style={{ fontSize: 13, color: "var(--muted-2)" }}>
             {comparison
-              ? `${selectedMetric?.label}: satellite ${comparison.satellite.toFixed(2)} vs hardware ${comparison.hardware.toFixed(2)}. Difference ${comparison.diff.toFixed(2)} ${selectedMetric?.unit || ""} (${comparison.diffPct.toFixed(1)}%).`
+              ? `${selectedMetric.label}: stored satellite ${comparison.satellite.toFixed(2)} vs stored hardware ${comparison.hardware.toFixed(2)}. Difference ${comparison.diff.toFixed(2)} ${selectedMetric.unit} (${comparison.diffPct.toFixed(1)}%).`
               : status || guidance}
           </div>
           {comparison && (
@@ -248,31 +333,62 @@ export default function HardwareVerificationPanel({
   );
 }
 
-function findMatchingRecords(records, coords, metric) {
-  if (!coords) return { satellite: null, hardware: null };
-
-  const key = coordinateKey(coords.lat, coords.lng);
-  const matches = records
-    .filter((record) => record.metric === metric && coordinateKey(record.lat, record.lng) === key)
-    .sort((a, b) => new Date(b.timestamp || b.date || 0).getTime() - new Date(a.timestamp || a.date || 0).getTime());
-
-  return {
-    satellite: matches.find((record) => record.source === "satellite") || null,
-    hardware: matches.find((record) => record.source === "hardware") || null,
-  };
+function PointPicker({ points, activePointId, onPick }) {
+  return (
+    <div style={pointPickerMenuStyle}>
+      {points.length === 0 ? (
+        <div style={{ padding: 14, color: "var(--muted)", fontSize: 12 }}>
+          No stored points yet
+        </div>
+      ) : (
+        points.map((point) => (
+          <button
+            key={point.pointId}
+            onClick={() => onPick(point)}
+            style={pointOptionStyle(point.pointId === activePointId)}
+          >
+            <span style={{ minWidth: 0 }}>
+              <span style={{ display: "block", color: "#fff", fontWeight: 700, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
+                {point.name}
+              </span>
+              <span style={{ display: "block", marginTop: 2, color: "var(--muted)", fontFamily: "'Space Mono', monospace", fontSize: 10 }}>
+                {point.lat.toFixed(5)}, {point.lng.toFixed(5)}
+              </span>
+            </span>
+            <span style={{ textAlign: "right", flexShrink: 0 }}>
+              <span style={{ color: point.readyCount ? "var(--amber)" : "var(--muted-2)", fontFamily: "'Space Mono', monospace", fontSize: 11 }}>
+                {point.readyCount} match{point.readyCount === 1 ? "" : "es"}
+              </span>
+              <span style={{ display: "block", marginTop: 2, color: "var(--muted)", fontSize: 10 }}>
+                S {point.satelliteCount} · H {point.hardwareCount}
+              </span>
+            </span>
+          </button>
+        ))
+      )}
+    </div>
+  );
 }
 
-function recordToPoint(record) {
-  if (record?.lat == null || record?.lng == null) return null;
-
-  const lat = Number(record.lat);
-  const lng = Number(record.lng);
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
+function makePoint({ lat, lng, name, sourceLabel, accuracy }) {
+  const pointId = buildPointId(lat, lng);
 
   return {
+    key: pointId,
+    pointId,
+    name,
+    sourceLabel,
     lat,
     lng,
-    label: record.location || "Selected record",
+    accuracy,
+    records: [],
+    satelliteRecords: [],
+    hardwareRecords: [],
+    satelliteCount: 0,
+    hardwareCount: 0,
+    metrics: {},
+    comparableRows: [],
+    readyCount: 0,
   };
 }
 
@@ -281,37 +397,13 @@ function isHardwareMetricAvailable(metric, mode, latestRaw) {
   return latestRaw?.[metric] != null;
 }
 
-function buildGuidance({ activeCoords, matching, comparison, metricLabel }) {
+function buildGuidance({ activePoint, metricState, comparison, metricLabel }) {
   if (comparison) return "";
-  if (!activeCoords) return "Step 1: choose a point. Select a record in Record Browser, click Use GPS, or click the map and add data there.";
-  if (!matching.satellite && !matching.hardware) return `${metricLabel || "Metric"} has no satellite or hardware record at this point yet. Fetch satellite, then save hardware.`;
-  if (!matching.satellite) return `${metricLabel || "Metric"} is missing satellite data at this point. Click Fetch Satellite Record.`;
-  if (!matching.hardware) return `${metricLabel || "Metric"} is missing hardware data at this point. Click Save Hardware Reading.`;
+  if (!activePoint) return "Choose a stored point, use GPS, select a record, or click the map to add data.";
+  if (!metricState.satellite && !metricState.hardware) return `${metricLabel} has no stored satellite or hardware data at this point yet. Store one or both sources first.`;
+  if (!metricState.satellite) return `${metricLabel} is missing a stored satellite record at this point.`;
+  if (!metricState.hardware) return `${metricLabel} is missing a stored hardware record at this point.`;
   return "";
-}
-
-function coordinateKey(lat, lng) {
-  if (lat == null || lng == null) return "";
-  return `${Number(lat).toFixed(4)},${Number(lng).toFixed(4)}`;
-}
-
-function buildComparison(satelliteRecord, hardwareRecord) {
-  if (!satelliteRecord || !hardwareRecord) return null;
-
-  const satellite = Number(satelliteRecord.value);
-  const hardware = Number(hardwareRecord.value);
-  if (!Number.isFinite(satellite) || !Number.isFinite(hardware)) return null;
-
-  const diff = hardware - satellite;
-  const diffPct = satellite === 0 ? 0 : (Math.abs(diff) / Math.abs(satellite)) * 100;
-
-  return {
-    satellite,
-    hardware,
-    diff,
-    diffPct,
-    match: Math.max(0, 100 - diffPct),
-  };
 }
 
 function ValuePill({ label, value, tone = "muted" }) {
@@ -343,6 +435,18 @@ function buttonStyle(tone, disabled = false) {
       background: "rgba(148,163,184,0.08)",
       border: "1px solid var(--border)",
       color: "var(--muted-2)",
+      cursor: disabled ? "not-allowed" : "pointer",
+    };
+  }
+
+  if (tone === "green") {
+    return {
+      width: "100%",
+      opacity: disabled ? 0.55 : 1,
+      background: "linear-gradient(135deg, rgba(74,222,128,0.18), rgba(74,222,128,0.08))",
+      border: "1px solid var(--green-border)",
+      color: "var(--green)",
+      fontWeight: 700,
       cursor: disabled ? "not-allowed" : "pointer",
     };
   }
@@ -380,8 +484,28 @@ function modeButtonStyle(active, tone, disabled = false) {
   };
 }
 
-const statusBadgeStyle = {
-  padding: "5px 10px",
+function matchRowStyle(active) {
+  return {
+    width: "100%",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
+    textAlign: "left",
+    padding: "8px 10px",
+    borderRadius: 9,
+    background: active ? "rgba(251,191,36,0.1)" : "rgba(6,11,20,0.55)",
+    border: active ? "1px solid var(--amber-border)" : "1px solid var(--border)",
+    color: "var(--text)",
+    cursor: "pointer",
+  };
+}
+
+const pointPickerButtonStyle = {
+  display: "flex",
+  alignItems: "center",
+  gap: 8,
+  padding: "7px 12px",
   borderRadius: 99,
   background: "rgba(34,211,238,0.1)",
   border: "1px solid rgba(34,211,238,0.28)",
@@ -389,4 +513,46 @@ const statusBadgeStyle = {
   fontSize: 11,
   fontFamily: "'Space Mono', monospace",
   whiteSpace: "nowrap",
+};
+
+const pointPickerMenuStyle = {
+  position: "absolute",
+  right: 0,
+  top: 38,
+  zIndex: 20,
+  width: 330,
+  maxHeight: 330,
+  overflowY: "auto",
+  padding: 8,
+  borderRadius: 12,
+  background: "rgba(6,11,20,0.98)",
+  border: "1px solid var(--border-hover)",
+  boxShadow: "0 24px 60px rgba(0,0,0,0.42)",
+};
+
+function pointOptionStyle(active) {
+  return {
+    width: "100%",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 10,
+    padding: "9px 10px",
+    marginBottom: 6,
+    borderRadius: 10,
+    textAlign: "left",
+    background: active ? "rgba(34,211,238,0.12)" : "rgba(10,18,32,0.65)",
+    border: active ? "1px solid var(--primary-border)" : "1px solid var(--border)",
+    cursor: "pointer",
+  };
+}
+
+const emptyStateStyle = {
+  padding: "18px 12px",
+  borderRadius: 10,
+  background: "rgba(6,11,20,0.45)",
+  border: "1px solid var(--border)",
+  color: "var(--muted)",
+  fontSize: 13,
+  lineHeight: 1.5,
 };

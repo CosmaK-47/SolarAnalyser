@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState, useCallback } from "react";
 
+import { buildPointGroups } from "../utils/pointRecords";
+
 const METRIC_COLORS = {
   irradiance: { color: "#fbbf24", label: "Irradiance", unit: "W/m²" },
   temperature: { color: "#f87171", label: "Temperature", unit: "°C" },
@@ -91,20 +93,11 @@ export default function MapView({ data, onAddData }) {
     const group = layerGroupRef.current;
     group.clearLayers();
 
-    // Group by location (only those with valid lat/lng)
-    const byLocation = {};
-    data.forEach((d) => {
-      const coords = normalizeLatLng(d.lat, d.lng);
-      if (!coords) return;
+    const pointGroups = buildPointGroups(data);
 
-      const location = d.location || `${coords.lat.toFixed(5)}, ${coords.lng.toFixed(5)}`;
-      if (!byLocation[location]) {
-        byLocation[location] = { lat: coords.lat, lng: coords.lng, records: [] };
-      }
-      byLocation[location].records.push(d);
-    });
-
-    Object.entries(byLocation).forEach(([location, { lat, lng, records }]) => {
+    pointGroups.forEach((point) => {
+      const { lat, lng, records } = point;
+      const location = point.name;
       const hasSat = records.some((r) => r.source === "satellite");
       const hasHW = records.some((r) => r.source === "hardware");
 
@@ -129,7 +122,7 @@ export default function MapView({ data, onAddData }) {
           tempMarkerRef.current.remove();
           tempMarkerRef.current = null;
         }
-        setPanel({ type: "location", location, lat, lng, records });
+        setPanel({ type: "location", location, lat, lng, records, point });
       });
 
       marker.addTo(group);
@@ -325,7 +318,7 @@ export default function MapView({ data, onAddData }) {
 
 /* ─── Location Panel ─────────────────────────────────────────────────── */
 function LocationPanel({ panel, onClose, onAddData }) {
-  const { location, lat, lng, records } = panel;
+  const { location, lat, lng, records, point } = panel;
 
   const satRecords = records.filter((r) => r.source === "satellite");
   const hwRecords = records.filter((r) => r.source === "hardware");
@@ -353,12 +346,12 @@ function LocationPanel({ panel, onClose, onAddData }) {
       <div style={{ display: "flex", gap: 6, marginBottom: 18 }}>
         {satRecords.length > 0 && (
           <span style={{ ...tagStyle, background: "rgba(34,211,238,0.1)", border: "1px solid rgba(34,211,238,0.25)", color: "var(--primary)" }}>
-            🛰 {satRecords.length} satellite
+            {satRecords.length} satellite
           </span>
         )}
         {hasHW ? (
           <span style={{ ...tagStyle, background: "rgba(74,222,128,0.1)", border: "1px solid rgba(74,222,128,0.25)", color: "var(--green)" }}>
-            🔧 {hwRecords.length} hardware
+            {hwRecords.length} hardware
           </span>
         ) : (
           <span style={{ ...tagStyle, background: "rgba(248,113,113,0.1)", border: "1px solid rgba(248,113,113,0.25)", color: "var(--red)" }}>
@@ -401,10 +394,18 @@ function LocationPanel({ panel, onClose, onAddData }) {
         }}
       >
         <div style={{ fontSize: 12, color: "var(--muted-2)", marginBottom: 10 }}>
-          Add satellite data or a hardware reading for this coordinate.
+          Add satellite data, a hardware reading, or both for this coordinate.
         </div>
         <button
-          onClick={() => onAddData({ location, lat, lng, source: "satellite" })}
+          onClick={() => onAddData({
+            location,
+            lat,
+            lng,
+            pointId: point?.pointId,
+            source: "both",
+            hardwareMode: hasHW ? undefined : "demo",
+            coordinateSource: hasHW ? "stored" : "map",
+          })}
           style={{
             width: "100%",
             padding: "9px 0",
@@ -459,11 +460,11 @@ function NewPointPanel({ panel, onClose, onAddData }) {
       </div>
 
       <div style={{ fontSize: 13, color: "var(--muted-2)", marginBottom: 16, lineHeight: 1.6 }}>
-        No existing measurements at this location. Add satellite data or a hardware reading for this coordinate.
+        No existing measurements at this location. Add satellite data and demo hardware for this coordinate.
       </div>
 
       <button
-        onClick={() => onAddData({ lat, lng, source: "satellite" })}
+        onClick={() => onAddData({ lat, lng, source: "both", hardwareMode: "demo", coordinateSource: "map" })}
         style={{
           width: "100%",
           padding: "11px 0",
@@ -477,7 +478,7 @@ function NewPointPanel({ panel, onClose, onAddData }) {
           boxShadow: "0 0 16px rgba(34,211,238,0.08)",
         }}
       >
-        Add Data At This Point
+        Add Demo Data At This Point
       </button>
     </div>
   );
@@ -586,16 +587,6 @@ function LegendDot({ color, label }) {
       <span>{label}</span>
     </span>
   );
-}
-
-function normalizeLatLng(latValue, lngValue) {
-  const lat = Number(latValue);
-  const lng = Number(lngValue);
-
-  if (!Number.isFinite(lat) || !Number.isFinite(lng)) return null;
-  if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return null;
-
-  return { lat, lng };
 }
 
 function createPointIcon(L, fillColor, glowColor) {

@@ -75,12 +75,14 @@ def capture_hardware_data(request):
         lng = float(payload["lng"])
         location = str(payload.get("location") or "").strip() or None
         mode = str(payload.get("mode") or "latest")
+        point_id = str(payload.get("point_id") or "").strip() or None
 
         measurement, count = capture_location_measurement(
             lat=lat,
             lng=lng,
             location=location,
             mode=mode,
+            point_id=point_id,
         )
 
         records = normalize_iot_measurements([measurement])

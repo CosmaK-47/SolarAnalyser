@@ -430,5 +430,192 @@
             "shading_factor": 0.15,
             "note": "Placeholder estimate. The older SentinelHub implementation is present but not wired safely yet."
         }
+    },
+    {
+        "id": "sat-20260511184911-93977773",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:11.487697+00:00",
+        "date": "2026-05-11",
+        "point_id": "legacy-46.7519-72.7734",
+        "location": "Point 46.75190, 72.77344",
+        "lat": 46.7519,
+        "lng": 72.77344,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 62.1,
+        "unit": "%",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20050511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-3f2a9758",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "irradiance",
+        "label": "Irradiance",
+        "value": 0.0,
+        "unit": "W/m²",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-feb8ded0",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "temperature",
+        "label": "Temperature",
+        "value": 20.42,
+        "unit": "°C",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-5b4a651b",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "wind_speed",
+        "label": "Wind Speed",
+        "value": 4.41,
+        "unit": "m/s",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-c9cb9ce2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "humidity",
+        "label": "Humidity",
+        "value": 47.9,
+        "unit": "%",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-628169e2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "pressure",
+        "label": "Pressure",
+        "value": 993.1,
+        "unit": "hPa",
+        "quality": "live",
+        "provider": "PVGIS Live",
+        "details": {
+            "pvgis_time_utc": "20200511:1800",
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-f715a219",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "elevation",
+        "label": "Elevation",
+        "value": 88.0,
+        "unit": "m",
+        "quality": "live",
+        "provider": "Open-Elevation",
+        "details": {
+            "note": "DEM elevation lookup for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-82fee7c2",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "vegetation",
+        "label": "Vegetation Coverage",
+        "value": 30.0,
+        "unit": "%",
+        "quality": "live",
+        "provider": "Sentinel-2 Live",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Live satellite record for the selected point."
+        }
+    },
+    {
+        "id": "sat-20260511184937-42efb7fd",
+        "source": "satellite",
+        "timestamp": "2026-05-11T18:49:37.021712+00:00",
+        "date": "2026-05-11",
+        "point_id": "pt-47.01880-28.83912",
+        "location": "Current GPS",
+        "lat": 47.0188,
+        "lng": 28.83912,
+        "metric": "shading",
+        "label": "Shading Factor",
+        "value": 15.0,
+        "unit": "%",
+        "quality": "live",
+        "provider": "Sentinel-2 Live",
+        "details": {
+            "ndvi_mean": 0.49,
+            "vegetation_coverage_pct": 30.0,
+            "tree_coverage_pct": 0,
+            "building_coverage_pct": 40.0,
+            "shading_factor": 0.15,
+            "note": "Live satellite record for the selected point."
+        }
     }
 ]
