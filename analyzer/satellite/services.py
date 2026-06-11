@@ -9,6 +9,7 @@ import requests
 
 PVGIS_TMY_URL = "https://re.jrc.ec.europa.eu/api/tmy"
 OPEN_ELEVATION_URL = "https://api.open-elevation.com/api/v1/lookup"
+OPEN_TOPO_DATA_URL = "https://api.opentopodata.org/v1/srtm90m"
 
 METRIC_DEFS = {
     "irradiance": {
@@ -210,24 +211,61 @@ def _extract_metric(
     raise SatelliteFetchError(f"Unsupported metric: {metric}")
 
 
-def _fetch_elevation(lat: float, lng: float) -> tuple[float, str, str, dict[str, Any]]:
+def _fetch_elevation(lat: float, lng: float) -> tuple[float | None, str, str, dict[str, Any]]:
+    errors = []
+
     try:
         response = requests.post(
             OPEN_ELEVATION_URL,
             json={"locations": [{"latitude": lat, "longitude": lng}]},
-            timeout=20,
+            timeout=10,
         )
         response.raise_for_status()
         payload = response.json()
         elevation = float(payload["results"][0]["elevation"])
+
+        return (
+            round(elevation, 2),
+            "m",
+            "Open-Elevation",
+            {"note": "DEM elevation lookup for the selected point."},
+        )
+
     except (requests.RequestException, KeyError, IndexError, TypeError, ValueError) as exc:
-        raise SatelliteFetchError(f"Open-Elevation request failed: {exc}") from exc
+        errors.append(f"Open-Elevation failed: {exc}")
+
+    try:
+        response = requests.get(
+            OPEN_TOPO_DATA_URL,
+            params={"locations": f"{lat},{lng}"},
+            timeout=10,
+        )
+        response.raise_for_status()
+        payload = response.json()
+        elevation = payload["results"][0].get("elevation")
+
+        if elevation is not None:
+            return (
+                round(float(elevation), 2),
+                "m",
+                "OpenTopoData SRTM90m",
+                {
+                    "note": "Fallback DEM elevation lookup using OpenTopoData SRTM90m.",
+                    "fallback_from": "Open-Elevation",
+                },
+            )
+
+    except (requests.RequestException, KeyError, IndexError, TypeError, ValueError) as exc:
+        errors.append(f"OpenTopoData failed: {exc}")
 
     return (
-        round(elevation, 2),
+        None,
         "m",
-        "Open-Elevation",
-        {"note": "DEM elevation lookup for the selected point."},
+        "Elevation unavailable",
+        {
+            "note": "Elevation unavailable because all elevation providers failed.",
+            "errors": errors,
+        },
     )
 
 

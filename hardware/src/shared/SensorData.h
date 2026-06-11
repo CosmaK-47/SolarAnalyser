@@ -1,4 +1,5 @@
 #pragma once
+
 #include <Arduino.h>
 
 struct SensorData {
@@ -10,6 +11,12 @@ struct SensorData {
     float panelVoltage = NAN;
     float panelCurrent = NAN;
     float panelPower = NAN;
+
+    double latitude = NAN;
+    double longitude = NAN;
+    double altitude = NAN;
+    int satellites = 0;
+    bool gpsValid = false;
 
     unsigned long timestamp = 0;
 };

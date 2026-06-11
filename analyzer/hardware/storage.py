@@ -16,6 +16,8 @@ HARDWARE_METRICS = {
     "panel_power": {"unit": "W", "label": "Panel Power"},
 }
 
+LUX_PER_WATT_PER_SQUARE_METER = 120
+
 
 class HardwareCaptureError(RuntimeError):
     pass
@@ -100,7 +102,7 @@ def find_latest_raw_esp32_measurement(measurements: list[dict] | None = None) ->
             continue
         if measurement.get("measurement_id"):
             continue
-        if not any(measurement.get(metric) is not None for metric in HARDWARE_METRICS):
+        if not any(_measurement_metric_value(measurement, metric) is not None for metric in HARDWARE_METRICS):
             continue
         return measurement
 
@@ -137,10 +139,11 @@ def normalize_iot_measurements(measurements: list[dict] | None = None) -> list[d
     for index, measurement in enumerate(measurements):
         timestamp = measurement.get("received_at") or measurement.get("timestamp")
         device_id = measurement.get("device_id") or measurement.get("deviceId") or "solar_node"
-        location = measurement.get("location") or device_id
+        coords = _measurement_coords(measurement)
+        location = measurement.get("location") or ("Current GPS" if coords else device_id)
 
         for metric, meta in HARDWARE_METRICS.items():
-            value = measurement.get(metric)
+            value = _measurement_metric_value(measurement, metric)
             if value is None:
                 continue
 
@@ -149,11 +152,11 @@ def normalize_iot_measurements(measurements: list[dict] | None = None) -> list[d
                 "source": "hardware",
                 "timestamp": timestamp,
                 "date": timestamp[:10] if isinstance(timestamp, str) else None,
-                "point_id": measurement.get("point_id") or _point_id(measurement.get("lat"), measurement.get("lng")),
+                "point_id": measurement.get("point_id") or (_point_id(coords["lat"], coords["lng"]) if coords else None),
                 "deviceId": device_id,
                 "location": location,
-                "lat": measurement.get("lat"),
-                "lng": measurement.get("lng"),
+                "lat": coords["lat"] if coords else None,
+                "lng": coords["lng"] if coords else None,
                 "metric": metric,
                 "label": meta["label"],
                 "value": value,
@@ -163,6 +166,43 @@ def normalize_iot_measurements(measurements: list[dict] | None = None) -> list[d
             })
 
     return records
+
+
+def _measurement_metric_value(measurement: dict, metric: str):
+    value = measurement.get(metric)
+    if value is not None:
+        return value
+
+    if metric == "irradiance":
+        lux = measurement.get("bh1750_lux")
+        if lux is None:
+            return None
+        try:
+            return round(float(lux) / LUX_PER_WATT_PER_SQUARE_METER, 2)
+        except (TypeError, ValueError):
+            return None
+
+    return None
+
+
+def _measurement_coords(measurement: dict) -> dict | None:
+    lat = measurement.get("lat")
+    lng = measurement.get("lng")
+
+    if (lat is None or lng is None) and measurement.get("gps_valid") is not False:
+        lat = measurement.get("latitude")
+        lng = measurement.get("longitude")
+
+    try:
+        lat = float(lat)
+        lng = float(lng)
+    except (TypeError, ValueError):
+        return None
+
+    if not (-90 <= lat <= 90 and -180 <= lng <= 180):
+        return None
+
+    return {"lat": lat, "lng": lng}
 
 
 def delete_iot_measurements_by_record_ids(record_ids: list[str]) -> int:

@@ -1,0 +1,259 @@
+[
+    {
+        "source": "satellite",
+        "location": "Chisinau",
+        "lat": 47.0105,
+        "lon": 28.8638,
+        "area_ha": 5.0,
+        "metric": "irradiance",
+        "value": 1461.8868971968786,
+        "full_result": {
+            "site": {
+                "lat": 47.0105,
+                "lon": 28.8638,
+                "area": 5.0
+            },
+            "tmy_results": {
+                "annual_kwh_kwp": 1230.8773698466061,
+                "monthly_kwh_kwp": {
+                    "1": 36.909926674203305,
+                    "2": 51.27700745966563,
+                    "3": 116.68043668205276,
+                    "4": 119.64869470849715,
+                    "5": 152.96659395186205,
+                    "6": 150.76440630027702,
+                    "7": 172.22923965850367,
+                    "8": 147.68533367191432,
+                    "9": 129.96263309920334,
+                    "10": 73.85788447178908,
+                    "11": 44.63682323098167,
+                    "12": 34.25838993765595
+                },
+                "df": "                         time(UTC)  temp_air  humidity  ghi  dni  dhi   IR(h)  wind_speed  WD10m  pressure  day  solar_zenith  solar_azimuth  poa  t_cell  power_kwp  month\ntime                                                                                                                                                                       \n2016-01-01 00:00:00  20160101:0000     -3.30     68.61  0.0  0.0  0.0  250.09        2.00  345.0  101290.0    1      2.567600       0.925835  0.0   -9.30        0.0      1\n2016-01-01 01:00:00  20160101:0100     -4.08     65.58  0.0  0.0  0.0  246.87        2.05  344.0  101280.0    1      2.410300       1.228664  0.0  -10.23        0.0      1\n2016-01-01 02:00:00  20160101:0200     -4.86     62.55  0.0  0.0  0.0  243.66        2.10  346.0  101270.0    1      2.236591       1.458389  0.0  -11.16        0.0      1\n2016-01-01 03:00:00  20160101:0300     -5.64     59.52  0.0  0.0  0.0  240.45        2.15  349.0  101240.0    1      2.058374       1.652201  0.0  -12.09        0.0      1\n2016-01-01 04:00:00  20160101:0400     -6.42     56.49  0.0  0.0  0.0  237.24        2.20  355.0  101250.0    1      1.882718       1.831363  0.0  -13.02        0.0      1\n...                            ...       ...       ...  ...  ...  ...     ...         ...    ...       ...  ...           ...            ...  ...     ...        ...    ...\n2017-12-31 19:00:00  20171231:1900      0.60     83.78  0.0  0.0  0.0  266.14        1.76  251.0   99950.0  365      2.370272       4.993011  0.0   -4.68        0.0     12\n2017-12-31 20:00:00  20171231:2000     -0.18     80.75  0.0  0.0  0.0  262.93        1.81  252.0  100000.0  365      2.533185       5.273543  0.0   -5.61        0.0     12\n2017-12-31 21:00:00  20171231:2100     -0.96     77.71  0.0  0.0  0.0  259.72        1.86  255.0  100040.0  365      2.663317       5.669573  0.0   -6.54        0.0     12\n2017-12-31 22:00:00  20171231:2200     -1.74     74.68  0.0  0.0  0.0  256.51        1.91  252.0  100060.0  365      2.724082       6.213888  0.0   -7.47        0.0     12\n2017-12-31 23:00:00  20171231:2300     -2.52     71.65  0.0  0.0  0.0  253.30        1.95  259.0  100060.0  365      2.685317       0.498822  0.0   -8.37        0.0     12\n\n[8760 rows x 17 columns]",
+                "annual_production_kwh": 1230.8773698466061,
+                "annual_irradiance_kwh_m2": 1461.8868971968786
+            },
+            "terrain": {
+                "terrain_score": 2.0,
+                "overall_quality": "poor",
+                "slope_quality": "poor",
+                "aspect_quality": "poor",
+                "details": {
+                    "slope": {
+                        "slope_mean": 23.973235259460708,
+                        "slope_max": 81.01512306831432,
+                        "quality": "poor",
+                        "score": 2
+                    },
+                    "aspect": {
+                        "aspect_mean": 69.3,
+                        "difference_from_south_deg": 110.7,
+                        "quality": "poor",
+                        "score": 2
+                    }
+                }
+            },
+            "shading": {
+                "annual_shading_loss_pct": 8.5,
+                "fully_shaded_hours": 200,
+                "partially_shaded_hours": 400,
+                "worst_month": 12,
+                "worst_month_loss_pct": 15.0
+            },
+            "infra": {
+                "infrastructure_score": 5.0,
+                "overall_quality": "moderate",
+                "grid": {
+                    "distance_m": 500,
+                    "quality": "poor",
+                    "score": 2
+                },
+                "road": {
+                    "distance_m": 200,
+                    "quality": "moderate",
+                    "score": 5
+                },
+                "connection_cost": {
+                    "cost_lei": 25000,
+                    "quality": "excellent",
+                    "score": 10
+                },
+                "source": "Estimated",
+                "timestamp": null
+            },
+            "p50_p90": {
+                "p10": 1122.2934040575767,
+                "p50": 1016.620746127034,
+                "p90": 918.4698822934128,
+                "mean": 1018.885544295921,
+                "std": 79.83555361753821
+            },
+            "validation": {
+                "coordinates": {
+                    "ok": true,
+                    "message": "Coordonate valide",
+                    "score": 10
+                },
+                "tmy": {
+                    "ok": true,
+                    "message": "Date TMY valide",
+                    "score": 10
+                },
+                "terrain": {
+                    "ok": false,
+                    "message": "Date DEM insuficiente",
+                    "score": 0
+                },
+                "shading": {
+                    "ok": true,
+                    "message": "Umbrire redusă",
+                    "score": 7
+                },
+                "infrastructure": {
+                    "ok": false,
+                    "message": "Scor infrastructură lipsă",
+                    "score": 0
+                },
+                "final": {
+                    "score": 4.55,
+                    "verdict": "RESPINS — locația prezintă probleme majore"
+                }
+            },
+            "maps": {
+                "static_map": null,
+                "heatmap": null
+            },
+            "pdf_report": "None",
+            "generated_at": "2026-05-05T23:25:58.393436"
+        },
+        "generated_at": "2026-05-05T23:25:58.393436"
+    },
+    {
+        "source": "satellite",
+        "location": "Chisinau",
+        "lat": 47.0105,
+        "lon": 28.8638,
+        "area_ha": 5.0,
+        "metric": "irradiance",
+        "value": 1461.8868971968786,
+        "full_result": {
+            "site": {
+                "lat": 47.0105,
+                "lon": 28.8638,
+                "area": 5.0
+            },
+            "tmy_results": {
+                "annual_kwh_kwp": 1230.8773698466061,
+                "monthly_kwh_kwp": {
+                    "1": 36.909926674203305,
+                    "2": 51.27700745966563,
+                    "3": 116.68043668205276,
+                    "4": 119.64869470849715,
+                    "5": 152.96659395186205,
+                    "6": 150.76440630027702,
+                    "7": 172.22923965850367,
+                    "8": 147.68533367191432,
+                    "9": 129.96263309920334,
+                    "10": 73.85788447178908,
+                    "11": 44.63682323098167,
+                    "12": 34.25838993765595
+                },
+                "annual_production_kwh": 1230.8773698466061,
+                "annual_irradiance_kwh_m2": 1461.8868971968786
+            },
+            "terrain": {
+                "terrain_score": 2.0,
+                "overall_quality": "poor",
+                "slope_quality": "poor",
+                "aspect_quality": "poor",
+                "details": {
+                    "slope": {
+                        "slope_mean": 23.973235259460708,
+                        "slope_max": 81.01512306831432,
+                        "quality": "poor",
+                        "score": 2
+                    },
+                    "aspect": {
+                        "aspect_mean": 69.3,
+                        "difference_from_south_deg": 110.7,
+                        "quality": "poor",
+                        "score": 2
+                    }
+                }
+            },
+            "shading": {
+                "annual_shading_loss_pct": 8.5,
+                "fully_shaded_hours": 200,
+                "partially_shaded_hours": 400,
+                "worst_month": 12,
+                "worst_month_loss_pct": 15.0
+            },
+            "infra": {
+                "infrastructure_score": 5.0,
+                "overall_quality": "moderate",
+                "grid": {
+                    "distance_m": 500,
+                    "quality": "poor",
+                    "score": 2
+                },
+                "road": {
+                    "distance_m": 200,
+                    "quality": "moderate",
+                    "score": 5
+                },
+                "connection_cost": {
+                    "cost_lei": 25000,
+                    "quality": "excellent",
+                    "score": 10
+                },
+                "source": "Estimated",
+                "timestamp": null
+            },
+            "p50_p90": {
+                "p10": 1122.7553217116847,
+                "p50": 1015.7257501664201,
+                "p90": 914.015905408346,
+                "mean": 1017.7463898056383,
+                "std": 80.76466975574456
+            },
+            "validation": {
+                "coordinates": {
+                    "ok": true,
+                    "message": "Coordonate valide",
+                    "score": 10
+                },
+                "tmy": {
+                    "ok": true,
+                    "message": "Date TMY valide",
+                    "score": 10
+                },
+                "terrain": {
+                    "ok": false,
+                    "message": "Date DEM insuficiente",
+                    "score": 0
+                },
+                "shading": {
+                    "ok": true,
+                    "message": "Umbrire redusă",
+                    "score": 7
+                },
+                "infrastructure": {
+                    "ok": false,
+                    "message": "Scor infrastructură lipsă",
+                    "score": 0
+                },
+                "final": {
+                    "score": 4.55,
+                    "verdict": "RESPINS — locația prezintă probleme majore"
+                }
+            },
+            "maps": {
+                "static_map": null,
+                "heatmap": null
+            },
+            "pdf_report": "None",
+            "generated_at": "2026-05-05T23:36:57.910764"
+        },
+        "generated_at": "2026-05-05T23:36:57.910764"
+    }
+]

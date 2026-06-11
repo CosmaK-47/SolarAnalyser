@@ -1,6 +1,7 @@
 #pragma once
-#include "SensorData.h"
+
 #include <Arduino.h>
+#include "SensorData.h"
 
 extern SensorData latestData;
 extern SemaphoreHandle_t dataMutex;
